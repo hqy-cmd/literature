@@ -20,8 +20,20 @@
     .main { padding:20px 18px 40px; }
     .list { display:grid; gap:12px; } .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); } .title { font-size:19px; font-weight:800; margin:0 0 8px; }
     .meta { color:var(--muted); font-size:13px; display:flex; gap:8px 12px; flex-wrap:wrap; margin-bottom:10px; } .summary { font-size:15px; margin-bottom:12px; } .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
-    .tag { background:var(--tag); color:#314155; border-radius:999px; padding:4px 10px; font-size:12px; } .actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .link-btn { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--accent); background:#fff; font-size:14px; font-weight:700; }
+    .tag { background:var(--tag); color:#314155; border-radius:999px; padding:4px 10px; font-size:12px; } .actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .link-btn { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--accent); background:#fff; font-size:14px; font-weight:700; cursor:pointer; }
     details.paper-detail { border-top:1px dashed var(--line); padding-top:10px; margin-top:8px; } details.paper-detail summary { cursor:pointer; color:var(--accent); font-weight:700; list-style:none; } details.paper-detail summary::-webkit-details-marker { display:none; } .empty { color:var(--muted); text-align:center; padding:42px 16px; background:#fff; border:1px dashed var(--line); border-radius:16px; }
+    .editor-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.35); display:none; align-items:flex-end; justify-content:flex-end; z-index:999; }
+    .editor-backdrop.open { display:flex; }
+    .editor-panel { width:min(560px, 100vw); height:100vh; background:#fff; box-shadow:-12px 0 32px rgba(15,23,42,.18); padding:18px; overflow:auto; }
+    .editor-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+    .editor-title { font-size:18px; font-weight:800; }
+    .editor-grid { display:grid; gap:10px; }
+    .editor-grid label { display:grid; gap:6px; font-size:13px; color:var(--muted); }
+    .editor-grid input, .editor-grid textarea, .editor-grid select { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; font-family:inherit; color:var(--text); background:#fff; }
+    .editor-grid textarea { min-height:110px; resize:vertical; }
+    .editor-actions { display:flex; gap:10px; margin-top:14px; }
+    .btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .editor-status { margin-top:10px; font-size:13px; color:var(--muted); }
     @media (max-width:900px) { .layout { grid-template-columns:1fr; } .sidebar { position:relative; height:auto; border-right:none; border-bottom:1px solid var(--line); } }
   </style>
 </head>
@@ -35,6 +47,29 @@
     <main class="main">
       <section id="paperList" class="list"></section>
     </main>
+  </div>
+  <div id="editorBackdrop" class="editor-backdrop">
+    <div class="editor-panel">
+      <div class="editor-head">
+        <div class="editor-title">编辑文献</div>
+        <button type="button" class="link-btn" id="editorCloseBtn">关闭</button>
+      </div>
+      <div class="editor-grid">
+        <label>标题<input id="editTitle" /></label>
+        <label>作者（逗号分隔）<textarea id="editAuthors"></textarea></label>
+        <label>年份<input id="editYear" /></label>
+        <label>一级分类<select id="editCategory"></select></label>
+        <label>分类集合（逗号分隔）<textarea id="editCollections"></textarea></label>
+        <label>标签（逗号分隔）<textarea id="editTags"></textarea></label>
+        <label>中文摘要<textarea id="editSummary"></textarea></label>
+        <label>来源备注<textarea id="editSourceNote"></textarea></label>
+      </div>
+      <div class="editor-actions">
+        <button type="button" class="link-btn btn-primary" id="editorSaveBtn">保存</button>
+        <button type="button" class="link-btn" id="editorCancelBtn">取消</button>
+      </div>
+      <div id="editorStatus" class="editor-status"></div>
+    </div>
   </div>
   <script id="embeddedData" type="application/json">{
   "version": 3,
@@ -567,8 +602,8 @@
   <script>
     const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
     const menuGroups = data.menu_groups || {};
-    const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部' };
-    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount') };
+    const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部', editingId:null };
+    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
     const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
     const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
     const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
@@ -576,6 +611,75 @@
     function matchesKeyword(p, keyword) { if(!keyword) return true; const hay=[p.title,p.authors,p.year,p.category,getCollections(p).join(' '),normalizeList(p.tags).join(' '),p.abstract_original,p.abstract_summary_zh,p.filename].join(' ').toLowerCase(); return hay.includes(keyword.toLowerCase()); }
     function matchesFilter(p) { if(state.selectedFilter==='全部') return true; return p.category===state.selectedFilter || getCollections(p).includes(state.selectedFilter); }
     function filteredPapers() { return state.allPapers.filter(p => matchesFilter(p) && matchesKeyword(p, state.keyword)); }
+    function fillCategoryOptions(selected) {
+      const options = ['其他', ...Object.keys(menuGroups)];
+      el.editCategory.innerHTML = options.map(x => `<option value="${x}" ${x===selected?'selected':''}>${x}</option>`).join('');
+    }
+    function openEditor(id) {
+      const paper = state.allPapers.find(p => p.id === id);
+      if (!paper) return;
+      state.editingId = id;
+      el.editTitle.value = paper.title || '';
+      el.editAuthors.value = normalizeList(paper.authors).join(', ');
+      el.editYear.value = paper.year || '';
+      fillCategoryOptions(paper.category || '其他');
+      el.editCollections.value = normalizeList(paper.collections).join(', ');
+      el.editTags.value = normalizeList(paper.tags).join(', ');
+      el.editSummary.value = paper.abstract_summary_zh || '';
+      el.editSourceNote.value = paper.source_note || '';
+      el.editorStatus.textContent = '';
+      el.editorBackdrop.classList.add('open');
+    }
+    function closeEditor() {
+      state.editingId = null;
+      el.editorBackdrop.classList.remove('open');
+      el.editorStatus.textContent = '';
+    }
+    async function saveEditor() {
+      if (!state.editingId) return;
+      el.editorStatus.textContent = '保存中…';
+      const payload = {
+        id: state.editingId,
+        updates: {
+          title: el.editTitle.value,
+          authors: el.editAuthors.value,
+          year: el.editYear.value,
+          category: el.editCategory.value,
+          collections: el.editCollections.value,
+          tags: el.editTags.value,
+          abstract_summary_zh: el.editSummary.value,
+          source_note: el.editSourceNote.value || '网页人工校正',
+        }
+      };
+      try {
+        const resp = await fetch('http://127.0.0.1:8766/api/papers/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await resp.json();
+        if (!resp.ok || !result.ok) {
+          throw new Error((result && (result.error || (result.rebuild && result.rebuild.stderr))) || '保存失败');
+        }
+        const paper = state.allPapers.find(p => p.id === state.editingId);
+        if (paper) {
+          paper.title = el.editTitle.value.trim();
+          paper.authors = normalizeList(el.editAuthors.value);
+          paper.year = el.editYear.value.trim();
+          paper.category = el.editCategory.value.trim();
+          paper.collections = normalizeList(el.editCollections.value);
+          paper.tags = normalizeList(el.editTags.value);
+          paper.abstract_summary_zh = el.editSummary.value.trim();
+          paper.source_note = (el.editSourceNote.value || '网页人工校正').trim();
+        }
+        renderMenu();
+        renderPapers();
+        el.editorStatus.textContent = '保存成功，已同步。';
+        setTimeout(() => closeEditor(), 500);
+      } catch (err) {
+        el.editorStatus.textContent = `保存失败：${err.message}`;
+      }
+    }
     function renderMenu() {
       const topCount = Object.keys(menuGroups).length;
       el.collectionCount.textContent = `${topCount} 类`;
@@ -601,11 +705,19 @@
         const collections = getCollections(p);
         const tags = normalizeList(p.tags).filter(t => !collections.includes(t));
         const href = p.file_url || p.file_path || '';
-        return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>加入时间：${safeText(p.added_at, '未记录')}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags">${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}</div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details><details class="paper-detail"><summary>查看补充信息</summary><div>原始文件名：${safeText(p.filename, '未记录')}</div><div>来源备注：${safeText(p.source_note, '未记录')}</div><div>原文路径：${safeText(p.file_path || p.file_url, '未记录')}</div></details></article>`;
+        return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>加入时间：${safeText(p.added_at, '未记录')}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags">${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}<button type="button" class="link-btn" data-edit-id="${p.id}">编辑</button></div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details><details class="paper-detail"><summary>查看补充信息</summary><div>原始文件名：${safeText(p.filename, '未记录')}</div><div>来源备注：${safeText(p.source_note, '未记录')}</div><div>原文路径：${safeText(p.file_path || p.file_url, '未记录')}</div></details></article>`;
       }).join('');
     }
     el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
+    el.editorCloseBtn.addEventListener('click', closeEditor);
+    el.editorCancelBtn.addEventListener('click', closeEditor);
+    el.editorSaveBtn.addEventListener('click', saveEditor);
+    el.editorBackdrop.addEventListener('click', e => { if (e.target === el.editorBackdrop) closeEditor(); });
     renderMenu(); renderPapers();
+    el.paperList.addEventListener('click', e => {
+      const btn = e.target.closest('[data-edit-id]');
+      if (btn) openEditor(btn.dataset.editId);
+    });
   </script>
 </body>
 </html>
