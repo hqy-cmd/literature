@@ -61,8 +61,9 @@ HTML_TEMPLATE = r'''<!doctype html>
     .filter-btn { width:100%; text-align:left; border:1px solid var(--line); background:#fff; color:var(--text); border-radius:12px; padding:10px 12px; cursor:pointer; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
     .filter-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
     .sub-list { display:grid; gap:6px; margin-top:4px; padding-left:6px; } .sub-list .filter-btn { font-size:13px; padding:9px 11px; }
-    .main { padding:20px 18px 40px; } .hero { background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); border:1px solid var(--line); border-radius:22px; padding:18px; box-shadow:var(--shadow); margin-bottom:16px; } .hero h1 { margin:0; font-size:28px; }
-    .hero-tools { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; } .ghost { border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 12px; font-size:14px; color:var(--text); }
+    .main { padding:20px 18px 40px; } .hero { background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); border:1px solid var(--line); border-radius:22px; padding:14px 18px; box-shadow:var(--shadow); margin-bottom:16px; }
+    .hero-tools { display:flex; gap:10px; flex-wrap:wrap; align-items:center; } .ghost { border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 12px; font-size:14px; color:var(--text); cursor:pointer; }
+    .ghost-label { cursor:pointer; }
     .list { display:grid; gap:12px; } .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); } .title { font-size:19px; font-weight:800; margin:0 0 8px; }
     .meta { color:var(--muted); font-size:13px; display:flex; gap:8px 12px; flex-wrap:wrap; margin-bottom:10px; } .summary { font-size:15px; margin-bottom:12px; } .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
     .tag { background:var(--tag); color:#314155; border-radius:999px; padding:4px 10px; font-size:12px; } .actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .link-btn { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--accent); background:#fff; font-size:14px; font-weight:700; }
@@ -78,7 +79,7 @@ HTML_TEMPLATE = r'''<!doctype html>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
     <main class="main">
-      <section class="hero"><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
+      <section class="hero"><div class="hero-tools"><button type="button" class="ghost" id="clearFilterBtn">清空筛选</button><button type="button" class="ghost ghost-label" id="currentFilterLabel">当前：全部</button></div></section>
       <section id="paperList" class="list"></section>
     </main>
   </div>
@@ -95,16 +96,23 @@ HTML_TEMPLATE = r'''<!doctype html>
     function matchesKeyword(p, keyword) { if(!keyword) return true; const hay=[p.title,p.authors,p.year,p.category,getCollections(p).join(' '),normalizeList(p.tags).join(' '),p.abstract_original,p.abstract_summary_zh,p.filename].join(' ').toLowerCase(); return hay.includes(keyword.toLowerCase()); }
     function matchesFilter(p) { if(state.selectedFilter==='全部') return true; return p.category===state.selectedFilter || getCollections(p).includes(state.selectedFilter); }
     function filteredPapers() { return state.allPapers.filter(p => matchesFilter(p) && matchesKeyword(p, state.keyword)); }
+    function resetFilters() {
+      state.keyword='';
+      state.selectedFilter='全部';
+      el.searchInput.value='';
+      renderMenu();
+      renderPapers();
+    }
     function renderMenu() {
       const topCount = Object.keys(menuGroups).length;
       el.collectionCount.textContent = `${topCount} 类`;
-      let html = `<button class="filter-btn ${state.selectedFilter==='全部'?'active':''}" data-name="全部"><span>全部</span><span>${state.allPapers.length}</span></button>`;
+      let html = `<button type="button" class="filter-btn ${state.selectedFilter==='全部'?'active':''}" data-name="全部"><span>全部</span><span>${state.allPapers.length}</span></button>`;
       for (const [top, children] of Object.entries(menuGroups)) {
         const topActive = state.selectedFilter===top ? 'active' : '';
-        html += `<details class="group" open><summary>${top}</summary><div class="menu-body"><button class="filter-btn ${topActive}" data-name="${top}"><span>${top}</span><span>${countByName(top)}</span></button><div class="sub-list">`;
+        html += `<details class="group" open><summary>${top}</summary><div class="menu-body"><button type="button" class="filter-btn ${topActive}" data-name="${top}"><span>${top}</span><span>${countByName(top)}</span></button><div class="sub-list">`;
         children.forEach(child => {
           const active = state.selectedFilter===child ? 'active' : '';
-          html += `<button class="filter-btn ${active}" data-name="${child}"><span>${child}</span><span>${countByName(child)}</span></button>`;
+          html += `<button type="button" class="filter-btn ${active}" data-name="${child}"><span>${child}</span><span>${countByName(child)}</span></button>`;
         });
         html += `</div></div></details>`;
       }
@@ -125,7 +133,8 @@ HTML_TEMPLATE = r'''<!doctype html>
       }).join('');
     }
     el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
-    el.clearFilterBtn.addEventListener('click', () => { state.keyword=''; state.selectedFilter='全部'; el.searchInput.value=''; renderMenu(); renderPapers(); });
+    el.clearFilterBtn.addEventListener('click', resetFilters);
+    el.currentFilterLabel.addEventListener('click', resetFilters);
     renderMenu(); renderPapers();
   </script>
 </body>
