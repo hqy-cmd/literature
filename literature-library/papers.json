@@ -2,6 +2,7 @@
   "version": 3,
   "library_name": "agent文献库",
   "collections": [
+    "其他",
     "可注射水凝胶",
     "多智能体强化学习",
     "机器人抓取",
@@ -16,6 +17,272 @@
     "视觉触觉融合"
   ],
   "papers": [
+    {
+      "id": "11930772-金天-生物医学工程系-vip.pdf-1752658290",
+      "title": "面向血液动力学的光声显微 成像技术 及其 应用研究",
+      "authors": [],
+      "year": "2023",
+      "category": "脑肿瘤",
+      "collections": [
+        "肿瘤消融",
+        "脑组织",
+        "脑肿瘤",
+        "荧光纳米温度计"
+      ],
+      "tags": [
+        "实验验证",
+        "系统设计",
+        "算法",
+        "应用",
+        "肿瘤消融",
+        "脑组织",
+        "脑肿瘤",
+        "荧光纳米温度计"
+      ],
+      "abstract_original": "III \n \nAbstract \nNeuroimaging techniques are effective tools for investigating brain \nfunction. In the current neuroimaging field, mature technologies exist such as \ntwo-photon fluorescence imaging, wide -field fluorescence imaging, and \nelectroencephalography, which can directly image and characterize micro -, \nmeso -, and macro -level neural act ivity. However, for the other vital system in \nthe brain, the vascular system, the current mature functional magnetic \nresonance imaging and functional ultrasound technologies only support research \non main vessels or average hemodynamics. This creates ongoin g controversies \nregarding various blood transport issues related to brain function and makes it \nchallenging to cross -validate neural activity and hemodynamic information at \nthe microvascular level. Therefore, to further uncover the mystery of this \ncomplex system, there is an urgent need in neuroscience for a new imaging \ntechnique that can address hemodynamics and support micro and meso -level \nimaging. \nPhotoacoustic microscopy is an effective solution to this problem. This \nimaging technique relies mainly on t he photoacoustic effect, imaging by \nreceiving ultrasound signals emitted by chromophores excited by pulsed light. \nIt has inherent characteristics suitable for biological imaging, such as label -free, \nradiation -free, and non -invasive features. The imaging co ntrast comes from the \nchromophore's absorption ability of laser, and the amplitude of the resulting \nphotoacoustic signal directly indicates the concentration of hemoglobin , which \nis closely related to brain activity. In addition, the imaging resolution of this \ntechnology depends on the numerical aperture of the focusing objective and can \nreach submicron or even nanometer levels. The imaging speed can cover \nhemodynamic fluctuation frequencies, and the imaging field of view can also \ncover the mouse cortex. Ho wever, even though all the performance indicators of \nphotoacoustic microscopy can meet the needs of brain function research, the \nimaging system is typically complex, voluminous, and inflexible, which limits \nits development in the field of neuroscience. \nhttp://kc.sustech.edu.cn\n\nAbstract \nIV \n \nTherefore, this article conducted research on photoacoustic microscopy \nbrain imaging technology, including feasibility demonstration, imaging system \ndevelopment, and analysis method establishment. Feasibility demonstration is \nthe theoretical basis for all sub sequent research, which mainly deduces the \ngeneration principle of photoacoustic signals and the linear relationship \nbetween photoacoustic signals and chromophore concentration, demonstrates \nthe feasibility of using photoacoustic signals to reflect hemoglo bin \nconcentration, and the signal homogeneity of photoacoustic imaging technology \nand existing mature neuroimaging techniques. Based on theoretical research, \nthis article developed a rotating optical resolution photoacoustic microscope \nsuitable for imaging hemoglobin in the mouse cortex, with a two -dimensional \nscanning mirror and a line -focused ultrasound detector as the core devices and a \nnovel rotating scanning mechanism as the imaging basis. Compared with \nclassical photoacoustic microscopy imaging system s, the system integration and \nusability have been significantly improved, and high spatiotemporal resolution \nimaging of micro vessels within the mouse cortex can be easily achieved. In \naddition, this article added a dual -wavelength input module to the imag ing \nsystem to add blood oxygen saturation imaging function, and used \nphotoacoustic correlation spectroscopy to add blood flow velocity imaging \nfunction. The cortical vascular photoacoustic images obtained by the imaging \nsystem are processed using both stru ctural and functional analysis methods, \nwhich can extract various structural indicators such as vascular area ratio, \nvascular length, vascular branching number, total number of vessels, and \nvascular diameter, as well as various brain activity functional in formation such \nas low -frequency amplitude, neurovascular coupling, and cortical functional \nconnectivity, for a comprehensive analysis of the cortical vascular network \nfrom multiple perspectives. \nBased on the high -performance photoacoustic microscopy imagin g system \nand the accompanying data analysis methods, this article conducted in -depth \nresearch on multiple animal models, such as global epilepsy, focal epilepsy, \nlocal brain electrical stimulation, brain glioma, and local limb stimulation in \nmice. Specific ally, this article used functional analysis to demonstrate the vast \ndifference in abnormal brain activity and functional connectivity between two \nhttp://kc.sustech.edu.cn\n\nAbstract \nV \n \nepilepsy models and the propagation path of hemodynamic abnormalities in \nfocal epilepsy. At the same time, by comparing the brain activity responses of \nfocal epilepsy and local brain electrical stimulation, it revealed the long -range \nfunctional connections between the somatosensory cortex and motor cortex in \nthe cerebral cortex. In addition, it quantitatively demo nstrated the pro -growth \neffect of brain gliomas on the cortical vascular network, the interference effect \non cortical hemodynamic responses, and the destructive effect on regional and \nhemispheric functional connections. \nIn summary, this article designed an d developed a photoacoustic \nmicroscopy imaging system suitable for mouse brain function research, as well \nas accompanying data analysis methods, and conducted brain function research \non various mouse models. The theoretical analysis and application researc h \nconducted in this article fully demonstrate the brain function research \ncapabilities of the photoacoustic microscopy brain imaging technology \ndeveloped in this article, laying a solid foundation for the progress of imaging \nsystems in photoacoustic imagin g and providing a new method for mesoscopic \nbrain functional imaging based on hemodynamics for neuroscience research.",
+      "abstract_summary_zh": "这篇文献主要围绕“脑肿瘤”相关问题展开，核心对象是“面向血液动力学的光声显微 成像技术 及其 应用研究”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "11930772-金天-生物医学工程系-vip.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/11930772-金天-生物医学工程系-vip.pdf",
+      "file_url": "files/11930772-金天-生物医学工程系-vip.pdf"
+    },
+    {
+      "id": "Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto_2020_Photoacous.pdf-1753848270",
+      "title": "Contents lists available atScienceDirect Photoacoustics",
+      "authors": [
+        "Antonia Longoa",
+        "b",
+        "c",
+        "Stefan Morscherc",
+        "Jaber Malekzadeh Najafababdia",
+        "b",
+        "Dominik Jüstela",
+        "b"
+      ],
+      "year": "2020",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "算法",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "The Hessian-based Frangi vesselness filter is commonly used to enhance vasculature in optoacoustic (photo-\nacoustic) images, but its accuracy and limitations have never been rigorously assessed. Here we validate the\nability of the filter to enhance vessel-like structures in phantoms, and we introduce an experimental approach\nthat uses measurements before and after the administration of gold nanorods (AuNRs) to examine filter per-\nformanceinvivo. We evaluate the influence ofcontrast, filter scales, angular tomographiccoverage, out-of-plane\nsignals and light fluence on image quality, and gain insight into the performance of the filter. We observe the\ngenerationofartifactualstructuresthatcanbemisinterpretedasvesselsandprovide recommendationsto ensure\nappropriate use of Frangi and other vesselness filters and avoid misinterpretation of post-processed optoacoustic\nimages.",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“Contents lists available atScienceDirect Photoacoustics”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto_2020_Photoacous.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto_2020_Photoacous.pdf",
+      "file_url": "files/Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto_2020_Photoacous.pdf"
+    },
+    {
+      "id": "Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf-1772431068",
+      "title": "3064 IEEE TRANSACTIONS ON MEDICAL IMAGING, VOL. 39, NO. 10, OCTOBER 2020",
+      "authors": [
+        "3064 IEEE TRANSACTIONS ON MEDICAL IMAGING",
+        "VOL. 39",
+        "NO. 10",
+        "OCTOBER 2020"
+      ],
+      "year": "2020",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "系统设计",
+        "算法",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "— By localizing microbubbles (MBs) in the\nvasculature, ultrasound localization microscopy (ULM) has\nrecently been proposed, which greatly improves the spatial\nresolution of ultrasound (US) imaging and will be help-\nful for clinical diagnosis. Nevertheless, several challenges\nremain in fast ULM imaging. The main problems are that\ncurrent localization methods used to implement fast ULM\nimaging, e.g., a previously reported localization method\nbased on sparse recovery (CS-ULM), suffer from long data-\nprocessing time and exhaustive parameter tuning (optimiza-\ntion). To address these problems, in this paper, we propose\na ULM method based on deep learning, which is achieved\nby using a modiﬁed sub-pixel convolutional neural network\n(CNN), termed as mSPCN-ULM. Simulations and\nin vivo\nexperiments are performed to evaluate the performance of\nmSPCN-ULM. Simulation results show that even if under\nhigh-density condition (6.4 MBs/mm\n2), a high localization\nprecision (∼28µm in the lateral direction and ∼24µmi nt h e\naxial direction) and a high localization reliability (Jaccard\nindex of 0.66) can be obtained by mSPCN-ULM, com-\npared to CS-ULM. The\nin vivo experimental results indicate\nthat with plane wave scan at a transmit center frequency\nof 15.625 MHz, microvessels with diameters of ∼17µm can\nbe detected and adjacent microvessels with a distance\nof ∼42µm can be separated. Furthermore, when using\nGPU acceleration, the data-processing time of mSPCN-ULM\ncan be shortened to ∼6 sec/frame in the simulations and\n∼23 sec/frame in the\nin vivoexperiments, which is 3-4 orders\nof magnitude faster than CS-ULM. Finally, once the network\nis trained, mSPCN-ULM does not need parameter tuning to\nManuscript received February 11, 2020; revised March 29, 2020;\naccepted March 29, 2020. Date of publication April 9, 2020; date of cur-\nrent version September 30, 2020. This work was supported in part by the\nNational Natural Science Foundation of China under Grant 61871263,\nGrant 61571281, and Grant 81371604.\n(Corresponding authors: Xin Liu;\nJianwen Luo.)\nXin Liu was with the School of Communication and Information\nEngineering, Shanghai University , Shanghai 200444, China. He is now\nwith the Academy for Engineering and T echnology , Fudan University ,\nShanghai 200433, China (e-mail: xinliu.c@gmail.com).\nTianyang Zhou and Mengyang Lu are with the Institute of Biomedical\nEngineering, Shanghai University , Shanghai 200444, China, and also\nwith the School of Communication and Information Engineering, Shang-\nhai University , Shanghai 200444, China (e-mail: yozty@shu.edu.cn;\n1342256138@qq.com).\nYi Y ang, Qiong He, and Jianwen Luo are with the Department\nof Biomedical Engineering, School of Medicine, Tsinghua Univer-\nsity , Beijing 100084, China (e-mail: yang-y16@mails.tsinghua.edu.cn;\ncmuheqiong@163.com; luo_jianwen@mail.tsinghua.edu.cn).\nThis article has supplementary downloadable material available at\nhttp://ieeexplore.ieee.org, provided by the authors.\nColor versions of one or more of the ﬁgures in this article are available\nonline at http://ieeexplore.ieee.org.\nDigital Object Identiﬁer 10.1109/TMI.2020.2986781\nimplement ULM. As a result, mSPCN-ULM opens the door\nto implement ULM with fast data-processing speed, high\nimaging accuracy, short data-acquisition time, and high\nﬂexibility (robustness to parameters) characteristics.\nIndex Terms — Convolutional neural networks, deep\nlearning, sub-pixel convolution layer, super-resolution\nultrasound imaging, ultrasound localization microscopy.\nI. I NTRODUCTION\nU\nLTRASOUND (US) imaging is a widely used modality\nin clinical diagnosis [1]. However, the spatial resolution\nof US imaging is theoretically constrained to approximately\nhalf the wavelength of the used sound wave. In clinical appli-\ncations, ultrasound wavelengths are generally between 0.1 mm\nand 1 mm, leading to a sub-millimeter spatial resolution [2].\nImaging with a shorter wavelength (or, a higher frequency) can\nimprove the spatial resolution, however, it results in a reduced\npenetration depth.\nTo overcome the limitation, inspired by optical super-\nresolution localization microscopy [3]–[5], e.g., stochastic\noptical reconstruction microscopy (STORM) or photoacti-\nvated localization microscopy (PALM), researchers have suc-\ncessfully applied the localization imaging concept to US,\nreferred to as ultrasound localization microscopy (ULM)\nor super-resolution ultrasound imaging (SR-US) [6]–[16].\nBy combining ultrasound microbubble (MB) as contrast agents\nwith the localization methods, ULM breaks the fundamental\nacoustic diffraction limit and signiﬁcantly improves the spatial\nresolution by more than an order of magnitude, which is\nhelpful for clinical diagnosis.\nWhen implementing ULM, the use of localization meth-\nods will directly affect the imaging performance. In cur-\nrent ULM imaging methods, MBs in the vasculature are\ngenerally resolved by the single-emitter localization meth-\nods [7]–[11], e.g., the Gaussian ﬁtting method and the Centroid\nmethod [7]–[9]. When using these localization methods, it is\nnecessary to reduce the possibility that the distance between\ntwo MBs is less than the resolvable limit, i.e., MBs in each\nframe have to be sufﬁciently sparse so that the individual\ncenters can be identiﬁed [7]. As a result, a low MB concen-\ntration is typically needed, leading to a long data-acquisition\ntime required to accumulate enough MBs. This limits the\napplications of ULM in fast biomedical imaging ﬁeld.\nOne way to improve the imaging speed is the use of tech-\nniques based on time correlation, e.g., super-resolution optical\n0278-0062 © 2020 IEEE. Personal use is permitted, but republication/redistribution requires IEEE permission.\nSee https://www.ieee.org/publications/rights/index.html for more information.\nAuthorized licensed use limited to: Soochow University. Downloaded on March 02,2026 at 05:57:20 UTC from IEEE Xplore. Restrictions apply. \nLIU et al.:D L F O R U L M 3065\nﬂuctuation imaging (SOFI) [17]. By exploiting the temporal\nﬂuctuations in acoustic signals, Bar-Zion et al. implemented\nfast vascular ultrasound imaging with enhanced spatial resolu-\ntion [18]. However, it is worth noting that in SOFI-based ULM\nmethods [18], [19], the spatial resolution is usually restricted\nto lower order cumulants (typically 2 order) [7], leading\nto a limited improvement in spatial resolution compared to\nthe single-emitter localization methods. As a result, it does\nnot allow microscopic resolutions [7]. Considering that MBs\nare generally sparely distr ibuted in each frame compared to\nthe imaging region, recently, l ocalization methods based on\ncompressed sensing (CS) [12], [13] (termed as CS-ULM) have\nbeen proposed and successfully applied to ULM. In our previ-\nous work, by applying CS to US imaging model, we demon-\nstrated that the overlapped MBs with a high density could be\nefﬁciently identiﬁed [12]. As a result, it reduces the number\nof imaging frames required for accumulating enough MBs,\nleading to an improved data-acquisition speed. However, when\nusing CS-ULM, there is a fundamental problem that the imag-\ning performance depends on the reconstruction parameters.\nUnfortunately, up to now, there is no clear consensus on how\nto ﬁnd the “best” parameters, which requires user expertise\nand increases the processing complexity. In addition, CS-ULM\nis computationally intensive because of the complex iterative\nprocedure, which leads to a large computational burden and\ninﬂexibility for clinical applications.\nRecently, deep learning (DL) [20]–[22] has shown great\npotential in solving medical imaging problems including x-ray\ncomputed tomography (XCT) [23]–[25], magnetic resonance\nimaging (MRI) [26], [27], positron emission computed\ntomography (PET) [28], [29], photoacoustic tomography\n(PAT) [30]–[32], and super-resolution optical microscopy\n(SROM) [33]–[35]. In the US literature, deep neural networks\nhave been successfully used for noise reduction [36] and\nclutter suppression [37]. Furthermore, Feigin et al. employ\nconvolutional neural network (CNN) to estimate the speed of\nsound in human body [38]. In ULM, CNN is also designed\nas spatio-temporal ﬁlter to efﬁ ciently extract MBs from tis-\nsue [39]. On the other hand, in the ﬁeld of US imaging, deep\nneural networks are developed to reconstruct US images from\nlimited radio-frequency (RF) data [40], [41], to implement\nhigh-quality beamforming [42], [43], and to correct artifacts in\nmulti-line acquisition [44] and transmission [45]. In addition,\nDL has been used to improve the imaging performance of\nscanning acoustic microscopy [46], ultrasound reﬂection imag-\ning [47], plane wave compounding imaging [48], and Doppler\nimaging [49].\nIntuitively, DL may also be used in ULM imaging to\nimprove the imaging performance and the ﬂexibility of imple-\nmentation. In ULM, two kinds of images are available. One\ncorresponds to the experimentally acquired US images at\nlow-resolution (LR) while the second depicts the correspond-\ning images containing the true locations of the MBs at super-\nresolution (SR). By training with the above data, DL is capable\nof learning a nonlinear mapping between the experimental\nimages and the true locations of the MBs. This mapping\nprovides the possibility of directly estimating the locations\nof the MBs from the acquired US images. In another word,\nDL will be “intelligent” that it is capable of utilizing this\nmapping knowledge to directly implement ULM, as demon-\nstrated by Sloun et al. [14], [15]. It should be noted that to\nimplement ULM, i.e., to achieve a super-resolution US image,\nit is necessary to increase the resolution of the LR image\n(the experimentally acquired U S images) to match that of the\nSR image (ULM). In the work from Sloun et al. [14], [15],\nthe image resolution is increased by using the standard up-\nsampling and transposed convolutions, which are implemented\nbased on an encoder-decoder network, similar to the U-Net\narchitecture.\nTo effectively map the LR image into the SR image,\nShi et al. [50] develop a sub-pixel CNN for image recovery,\nin which sub-pixel means dividing each pixel in the LR image\ninto the corresponding r\n2 (r × r) sub-pixels according to an\nupscale factor r. According to [50], by using the sub-pixel\nconvolution layer, on one hand, the computational and memory\ncomplexity can be reduced when performing the upscaling\noperations. On the other hand, it is helpful for learning a more\ncomplex LR-to-SR mapping.\nInspired by the work of Shi et al., in this paper, we propose\na new DL method for ULM imaging, which is implemented\nbased on a modiﬁed sub-pixel CNN architecture, termed as\nmSPCN-ULM. For this task, a sub-pixel CNN architecture\nis adopted. Especially, according to [51], residual blocks\nare also incorporated into the sub-pixel network for further\nimproving the training efﬁciency. We train the network on\nsimulated data, where the LR US images are considered as\nthe input to the network and the true locations of MBs are\nconsidered as the labels. Sequentially, the trained network is\ndirectly applied to both simulated and experimental data. The\nresults of the simulations and in vivo experiments conﬁrm that\nmSPCN-ULM makes the possibility of implementing ULM\nimaging with fast data-processing speed, short data-acquisition\ntime, high imaging accuracy, and high ﬂexibility of imple-\nmentation (robustness to parameters). The source code and\ndata for this work are available on IEEE DataPort (DOI:\n10.21227/jdgd-0379).\nThe rest of the paper is organized as follows. In Section II,\nthe methods are described, including mSPCN-ULM archi-\ntecture, loss function, network training, quantitative analysis,\nand other ULM methods. In Section III, the training data,\nand experimental designs of the simulations and in vivo\nexperiments are detailed. In Section IV , the corresponding\nexperimental results are analyzed. Finally, we discuss the\nrelevant results and draw a conclusion in Section V.\nII. M\nETHODS\nAs mentioned above, to implement ULM, the experimen-\ntally acquired LR US images need to be upscaled to the\nSR space. Generally, there are two kinds of methods to\nimplement the upscaling operation. The ﬁrst kind of methods\nis to increase the resolution of the LR images (the input data)\nbefore the network. After that, the scaled image is used as\nthe input to the network. In the second kind of methods,\nthe upscaling operation is implemented gradually in the middle\nof the network. It is worth noting that the ﬁrst kind of methods\nAuthorized licensed use limited to: Soochow University. Downloaded on March 02,2026 at 05:57:20 UTC from IEEE Xplore. Restrictions apply. \n3066 IEEE TRANSACTIONS ON MEDICAL IMAGING, VOL. 39, NO. 10, OCTOBER 2020\nFig. 1. Schematic diagram depicting the principle and the overall\nstructure of the used network. The experimentally acquired US images\nare used as the input to the network, and the corresponding images\ncontaining the true locations of MBs are used as the output. An efﬁcient\nsub-pixel convolutional neural network with modiﬁcations of adding\nresidual blocks is used to train the above data. The compositions of\nthe residual blocks and the principle of the pixel shufﬂe operation of\nthe sub-pixel convolutional layer are shown in the purple and red dotted\nboxes, respectively . Here,\nr is the upscale factor.\nincreases the computational complexity since the processing\nspeed of convolutional networks directly depends on the size\nof the input image. In additi on, the interpolation methods\ntypically used to scale the input images before the network\ndo not bring additional information to the network, which may\naffect the obtained imaging performance. A comparison of the\nabove upscaling schemes implemented on a U-Net architecture\nis demonstrated in Section I.E of the Supplementary Material.\nBased on the above considerations, in this work, the image\nresolution is increased only at the end of the network. Here,\nit is implemented using an efﬁcient sub-pixel convolution\nlayer similar to [50], which is capable of further reducing the\ncomputational complexity of upscaling operation and learning\na better LR-to-SR mapping. Fig. 1 shows the overall structure\nof the used network.\nA. Network Architecture\nThe overall structure of CNN we used follows an efﬁ-\ncient sub-pixel architecture [50]. In addition, to improve the\ntraining efﬁciency and reduce the training error, the residual\nblocks [51] are added. Brieﬂy, as shown in Fig. 1, the network\nconsists of 13 convolution layers. The ﬁrst convolution layer\nis used to extract shallow layer features of the image. Then,\nthe 10 convolution layers in the intermediate residual structure\nare used for local residual learning. The 12th convolution layer\nis connected to the 1st convolu tion layer for global residual\nlearning. The 13th convolution layer, i.e., the sub-pixel con-\nvolution layer at the end of the network, is used to implement\nup-sampling operation. The initial input to the network is the\nexperimentally acquired US image x and the corresponding\nﬁnal output is the MB localization image y. Here, the sizes\nfor x and y are different in the following simulations and\nin vivo experiments. In the simulations, the sizes of x are set\nmainly based on assessment purpose and computational cost.\nIn the in vivo experiments, the sizes of the input data are equal\nto the sizes of the experimentally acquired US data. Details\non the network are described below.\n1) Feature Extraction : Feature extraction of the image is per-\nformed by the convolution layer followed by a nonlinear acti-\nvation function (ReLU) in the LR space. In detail, the feature\nextraction layers of the entire network use 3 × 3 convolution\nkernels, except the ﬁrst layer that uses 9×9 convolution kernel.\nThe functions of the feature extraction layers can be described\nas follows,\nfk(x) = Re(Wk ∗ fk−1(x) + bk) (1)\nwhere fk(x) represents the output of the kth feature extraction\nlayer, and f0(x) = x represents the input US image to the\nnetwork. Wk and bk denote the learnable weights and bias\nin the kth convolution layer of the n etwork, respectively.\nAnd ∗ denotes the convolution operation. Re denotes the\nReLU activation function. All feature extraction of the network\nis performed in the LR space, wh ich can improve the training\nefﬁciency of the network and the localization speed of each\nframe.\n2) Residual Learning : In theory, the deeper the network\nis, the better the training performance can be. However,\nin practice, when the gradient in each layer is < 1( > 1),\nas the number of network layer increases, the gradient will\ndecay (increase) exponentially during training, which is called\ngradient vanishing (exploding). In addition, with the network\ndepth increasing, the accuracy gets saturated and then degrades\nrapidly because of a degradation p roblem. As a result, training\ndeeper networks becomes very difﬁcult [51].\nTo address the problem, in this work, the residual learning\n(see the purple dotted box in Fig. 1 ) is introduced into the\nproposed network. In detail, 5 residual blocks are added to\nthe network, and each contains 2 convolution layers, where\nthe input to the ﬁrst convolution layer is connected to the\noutput of the second convolution layer for the local residual\nlearning. The output of the ﬁrst convolution layer of the\nentire network is connected to the output of the convolution\nlayer after the last residual block for the global residual\nlearning.\nFor each residual block, instead of directly mapping the\ninput to the output by stack layers, here, a residual mapping\nis adopted which can be mathematically described as follows,\n∂(κ)= ζ− κ (2)\nwhere κ represents the input to the residual block, ζ represents\nthe output of the residual block, and ∂(κ) represents the\nresidual function. Once the residual mapping is built, we can\nreconstruct the original mapping as ℑ(κ) = ζ = ∂(κ)+ κ.\nConsequently, the task of learning a direct mapping (from the\ninput to the output) is converted to that of learning the residual\nmapping (from the input to the residual).\nAccording to [51], there are two beneﬁts associated with the\nresidual mapping. Firstly, it is easier to optimize the residual\nmapping than to optimize the direct mapping (by using simple\nstack layers). In other words, the residual network can help\novercome the gradient vanishing/exploding and degradation\nproblems, and makes it possible to train deeper network.\nSecondly, the residual network can easily obtain accuracy\nAuthorized licensed use limited to: Soochow University. Downloaded on March 02,2026 at 05:57:20 UTC from IEEE Xplore. Restrictions apply. \nLIU et al.:D L F O R U L M 3067\ngains with an increased depth, and produces better results\nthan the direct-mapping network. The detailed information\non residual learning block is described in Section I.D of the\nSupplementary Material.\n3) Sub-Pixel Convolution Layer : In US imaging, the experi-\nmentally acquired US images are at low resolution. To achieve\na super-resolution US image (ULM), it is necessary to increase\nthe resolution of the LR image to match that of the SR image.\nIn this work, the upscaling operation is implemented by a\nsub-pixel convolution layer.\nAssume that the input image has a size of H × W,w h e r e\nH and W are the height and width of the image, respectively.\nWhen upscaling the input image by r times, we do not\ndirectly generate the SR image . Comparably, the sub-pixel\nconvolution layer ﬁrst extracts H × W × r\n2 feature maps from\nthe input through convolution. After that, the H × W × r2\nelements are re-arranged and form a new image with a size\nof ( r × H) × (r × W), which is implemented by periodic\nshufﬂing (PS) operation. According to [50], the operation can\nbe mathematically described as follows,\nˆy = fl(x) = PS(Wl ∗ fl−1(x) + bl) (3)\nwhere ˆy denotes the localization result of network prediction.\nfl(x) and fl−1(x) represent the output of and the input to\nthe last convolution layer, respectively. Wl and bl denote the\ncorresponding learnable weights and bias. The schematic of\nPS operation can be found in the red dotted box in Fig. 1 .\nIn this work, the upscale factor r is set as 4, which is selected\nempirically through a comprehensive trial.\n4) Loss Function : The choice of loss function has a great\nimpact on the network training. Although the mean squared\nerror (MSE) loss function has been widely used in DL,\nthe minimization of MSE may lead to smooth solutions that\nignore the high-frequency parts of the original signal [52].\nConsidering that in ULM imaging, MBs in the imaging\ndomain are generally very sparse, in this work, l",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“3064 IEEE TRANSACTIONS ON MEDICAL IMAGING, VOL. 39, NO. 10, OCTOBER 2020”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf",
+      "file_url": "files/Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf"
+    },
+    {
+      "id": "Human-scale navigation of magnetic microrobots in hepatic arteries.pdf-1772528838",
+      "title": "Li et al., Sci. Robot. 9, eadh8702 (2024) 14 February 2024",
+      "authors": [
+        "Li et al.",
+        "Sci. Robot. 9",
+        "eadh8702 (2024) 14 February 2024"
+      ],
+      "year": "2024",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "系统设计",
+        "算法",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "Li et al., Sci. Robot. 9, eadh8702 (2024) 14 February 2024\nScience Robotic S | Re S ea R ch aR tic L e\n1 of 14\nMICROROBOTS\nHuman- scale navigation of magnetic micr orobots in \nhepatic arteries\nNing Li1,2*†, Phillip Fei1,2†, Cyril Tous1,2†, Mahdi Rezaei Adariani 1,2,3, Marie- Lou Hautot1,2,\nI\nnès Ouedraogo1,4, Amina Hadjadj1,2, Ivan P . Dimov1,2‡, Quan Zhang 5,6*, Simon Lessard1,2,\nZ\neynab Nosrati7, Courtney N. Ng7, Katayoun Saatchi7, Urs O. Häfeli7, Charles Tremblay8, \nSamuel Kadoury1,8, An Tang1,2,9, Sylvain Martel8,10*, Gilles Soulez1,2,9*\nUsing external actuation sources to navigate untethered drug- eluting microrobots in the bloodstr eam offers \ngreat promise in improving the selectivity of drug delivery, especially in oncology, but the current field forces are \ndifficult to maintain with enough strength inside the human body (>70- centimeter\n- diameter range) to achie\nve\nthis operation. Here, we present an algorithm to predict the optimal patient position with respect to gravity during \nendovascular microrobot navigation. Magnetic resonance navigation, using magnetic field gradients in clinical \nmagnetic resonance imaging (MRI), is combined with the algorithm to improve the ta",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“Li et al., Sci. Robot. 9, eadh8702 (2024) 14 February 2024”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "Human-scale navigation of magnetic microrobots in hepatic arteries.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/Human-scale navigation of magnetic microrobots in hepatic arteries.pdf",
+      "file_url": "files/Human-scale navigation of magnetic microrobots in hepatic arteries.pdf"
+    },
+    {
+      "id": "MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia.pdf-1758710138",
+      "title": "International Journal of Hyperthermia ISSN: 0265-6736 (Print) 1464-5157 (Online) Journal homepage: www.tandfonline.com/journals/ihyt20",
+      "authors": [
+        "Alexander LeBrun",
+        "Navid Manuchehrabadi",
+        "Anilchandra Attaluri",
+        "Frank"
+      ],
+      "year": "2013",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "算法",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "Objectives: The objective of this study was to develop and test computer algorithms to export\nmicro computed tomography (microCT) images and to generate tumour geometry and specific\nabsorption rate (SAR) distribution for heat transfer simulation in magnetic nanoparticle\nhyperthermia. Methods: Computer algorithms were written to analyse and export microCT\nimages of 3D tumours containing magnetic nanoparticles. MATLAB /C213and ProE/C213programs were\nused to generate a prototype of the tumour geometry. The enhancements in the microCT pixel\nindex number due to presence of nanoparticles in the tumours were first converted into\ncorresponding SAR values. The SAR data were then averaged over three-dimensional clusters\nof pixels using the SAS /C213program. This greatly decreased the size of the SAR file, while in the\nmeantime it ensured that the amount of total energy deposited in the tumour was conserved.\nBoth the tumour geometry and the SAR file were then imported into the COMSOL /C213software\npackage to simulate temperature elevations in the tumour and their surrounding tissue region\nduring magnetic nanoparticle hyperthermia. Results: A linear relationship was obtained to relate\nindividual pixel index numbers in the microCT images to the SAR values under a specific\nmagnetic field. The generated prototype of the tumour geometry based on only 30 slices\nof microCT images resembled the original tumour shape and size. The tumour geometry\nand the simplified SAR data set were successfully accepted by the COMSOL software for heat\ntransfer simulation. Up to 20 /C14C temperature elevations from its baseline temperature were\nfound inside the tumours, implying possible thermal damage to the tumour during magnetic\nnanoparticle hyperthermia.",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“International Journal of Hyperthermia ISSN: 0265-6736 (Print) 1464-5157 (Online) Journal homepage: www.tandfonline.com/journals/ihyt20”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia.pdf",
+      "file_url": "files/MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia.pdf"
+    },
+    {
+      "id": "Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M_2020_Photoaco.pdf-1753848270",
+      "title": "Photoacoustics 20 (2020) 100204 Available online 25 September 2020",
+      "authors": [],
+      "year": "2020",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "系统设计",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "Multispectral photoacoustic microscopy uses a wavelength-dependent absorption difference as a contrast \nmechanism to image the target molecule. In this paper, we present a novel multispectral pulsed fiber laser source, \nwhich selectively alternates the excitation wavelengths between green and red colors based on the stimulated \nRaman scattering (SRS) effect for imaging. This laser has a high pulse repetition rate (PRR) of 300 kHz and high \npulse energy of more than 200 nJ meeting the real-time requirements of optical-resolution photoacoustic mi -\ncroscopy imaging. By switching the polarization state of the pump light and optical paths of the pump light, the \noperating wavelengths of the light source can be selectively alternated at the same fast PRR for any two SRS peak \nwavelengths between 545 and 655 nm. At 545 nm excitation wavelength, molecular photoacoustic signals from \nboth blood vessels and gold nanorods were obtained simultaneously. However, at 655 nm, the photoacoustic \nsignals of gold nanorods were dominant because the absorption of light by the blood vessels decreased drastically \nin the spectral region over 600 nm. Thus the multispectral photoacoustic system designed using the novel laser \nsource implemented here could simultaneously monitor the time-dependent fast movement of two molecules \nindependently, having different wavelength-dependent absorption properties at a high repetition rate of 0.49 \nframes per second (fps).",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“Photoacoustics 20 (2020) 100204 Available online 25 September 2020”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M_2020_Photoaco.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M_2020_Photoaco.pdf",
+      "file_url": "files/Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M_2020_Photoaco.pdf"
+    },
+    {
+      "id": "accurate-and-real-time-temperature-monitoring-during-mr-imaging-guided-ptt.pdf-1769062532",
+      "title": "Accurate and Real-Time Temperature Monitoring during MR Imaging Guided PTT",
+      "authors": [
+        "Xianfu Meng",
+        "∇ Boyu Zhang",
+        "∇ Yan Yi",
+        "Hui Cheng",
+        "Baoming Wang",
+        "Yanyan Liu",
+        "Teng Gong",
+        "Wei Yang"
+      ],
+      "year": "2020",
+      "category": "肿瘤消融",
+      "collections": [
+        "肿瘤消融",
+        "温度成像"
+      ],
+      "tags": [
+        "实验验证",
+        "算法",
+        "应用",
+        "肿瘤消融",
+        "温度成像"
+      ],
+      "abstract_original": "Photothermal therapy (PTT) is an e ﬃ cient\napproach for cancer treatment. However, accurately monitoring\nthe spatial distribution of photothermal transducing agents (PTAs)\nand mapping the real-time temperature change in tumor and\nperitumoral normal tissue remain a huge challenge. Here, we\npropose an innovative strategy to integrate T\n1-MRI for precisely\ntracking PTAs with magnetic resonance temperature imaging\n(MRTI) for real-time monitoring temperature change in vivo\nduring PTT. NaBiF\n4: Gd@PDA@PEG nanomaterials were\nsynthesized with favorable T 1-weighted performance to target\ntumor and localize PTAs. The extremely weak susceptibility (1.04\n× 10\n−6 emu g−1 Oe1−) of NaBiF 4: Gd@PDA@PEG interferes with\nthe local phase marginally, which maintains the capability of MRTI\nto dynamically record real-time temperature change in tumor and peritumoral normal tissue. The time resolution is 19 s per frame,\nand the detection precision of temperature change is approximately 0.1 K. The approach achieving PTT guided by multimode MRI\nholds signi ﬁcant potential for the clinical application.",
+      "abstract_summary_zh": "这篇文献主要围绕“肿瘤消融”相关问题展开，核心对象是“Accurate and Real-Time Temperature Monitoring during MR Imaging Guided PTT”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "accurate-and-real-time-temperature-monitoring-during-mr-imaging-guided-ptt.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/accurate-and-real-time-temperature-monitoring-during-mr-imaging-guided-ptt.pdf",
+      "file_url": "files/accurate-and-real-time-temperature-monitoring-during-mr-imaging-guided-ptt.pdf"
+    },
+    {
+      "id": "wide-field polygon-scanning photoacoustic microscopy.pdf-1753262564",
+      "title": "Contents lists available at ScienceDirect Photoacoustics",
+      "authors": [
+        "Jiangbo Chen a",
+        "Yachao Zhang a",
+        "Linyun He b",
+        "Yizhi Liang c",
+        "Lidai Wang a",
+        "d"
+      ],
+      "year": "2020",
+      "category": "其他",
+      "collections": [
+        "其他"
+      ],
+      "tags": [
+        "实验验证",
+        "应用",
+        "其他"
+      ],
+      "abstract_original": "We report wide- ﬁeld polygon-scanning functional OR-PAM that for the ﬁrst time achieves 1-MHz A-line rate of\noxygen saturation in vivo. We address two technical challenges. The ﬁrst is a 1-MHz dual-wavelength pulsed\nlaser that has su ﬃcient pulse energy and ultrafast wavelength switching. The second is a polygon-scanning\nimaging probe that has a fast scanning speed, a large ﬁeld of view, and great sensitivity. The OR-PAM system\noﬀers a B-scan rate of 477.5 Hz in a 12-mm range and a volumetric imaging rate of ∼1 Hz over a 12 × 5 mm 2\nscanning area. We image microvasculature and blood oxygen saturation in a 12 × 12 mm 2 scanning area in 5 s.\nDynamic imaging of oxygen saturation in the mouse ear is demonstrated to monitor fast response to epinephrine\ninjection. The new wide-ﬁ eld fast functional imaging ability broadens the biomedical application of OR-PAM.",
+      "abstract_summary_zh": "这篇文献主要围绕“其他”相关问题展开，核心对象是“Contents lists available at ScienceDirect Photoacoustics”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "wide-field polygon-scanning photoacoustic microscopy.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/wide-field polygon-scanning photoacoustic microscopy.pdf",
+      "file_url": "files/wide-field polygon-scanning photoacoustic microscopy.pdf"
+    },
+    {
+      "id": "用于超快血流动力学成像的高效光声显微镜.pdf-1754536180",
+      "title": "High-EﬃciencyPhotoacousticMicroscopyforUltrafast HemodynamicImaging",
+      "authors": [
+        "Wei Qin",
+        "Tingting Li",
+        "Yifan Chen",
+        "Xiao Liang",
+        "Linyang Li",
+        "Heng Guo",
+        "Weizhi Qi"
+      ],
+      "year": "2025",
+      "category": "脑肿瘤",
+      "collections": [
+        "脑肿瘤",
+        "脑组织"
+      ],
+      "tags": [
+        "实验验证",
+        "算法",
+        "应用",
+        "脑肿瘤",
+        "脑组织"
+      ],
+      "abstract_original": "RESEARCH ARTICLE\nwww.lpr-journal.org\nHigh-EﬃciencyPhotoacousticMicroscopyforUltrafast\nHemodynamicImaging\nWei Qin, Tingting Li, Yifan Chen, Xiao Liang, Linyang Li, Heng Guo, Weizhi Qi,*\nand Lei Xi*\nUnderstandingbrainfunctionsrequiresvisualizationofcerebral\nhemodynamicswithahighspatiotemporalresolution.Recentadvancesutilize\nvariousscanningschemestopromotetheimagingspeedofphotoacoustic\nmicroscopyforlabel-freehemodynamicimaging.However,duetothe\ninsuﬃcientutilizationoflaserpulses,recordingcerebralhemodynamicswith\nasatisfactoryspatiotemporalresolutionstillremainsachallenge.Here,a\n3-axisopticalscannerisemployedtodevelopahigh-eﬃciencyphotoacoustic\nmicroscopy(HePAM)fortheinvestigationofhemodynamicsinthecerebral\ncortex.ThescanengineprovidesanultrafastB-scanrateofupto1.6kHz.Its\ncapabilityinﬂexibleimagingofspeciﬁcregionsofinterest(ROIs)is\ndemonstratedtocapturehemodynamicresponsesinwholecortex,\nhemisphere,andarbitrarysinglebloodvessels.Inaddition,HePAMhasthe\nuniqueadvantageofintegratingwithwideﬁeldimagingtoprovide\nsimultaneousprecisephotothrombosisinductionandmonitoring.\n1.Introduction\nHemodynamic responses form the basis of neurovascular cou-\npling, which is the premise for functional imaging ",
+      "abstract_summary_zh": "这篇文献主要围绕“脑肿瘤”相关问题展开，核心对象是“High-EﬃciencyPhotoacousticMicroscopyforUltrafast HemodynamicImaging”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "用于超快血流动力学成像的高效光声显微镜.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-28 17:53",
+      "file_path": "files/用于超快血流动力学成像的高效光声显微镜.pdf",
+      "file_url": "files/用于超快血流动力学成像的高效光声显微镜.pdf"
+    },
     {
       "id": "11930772-金天-生物医学工程系-vip---f9bfd2f7-8600-4930-a5f4-458b7bbdd015.pdf-1774331941",
       "title": "面向血液动力学的光声显微 成像技术 及其 应用研究",
