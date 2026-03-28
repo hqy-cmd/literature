@@ -53,7 +53,6 @@ HTML_TEMPLATE = r'''<!doctype html>
     * { box-sizing:border-box; } body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
     .layout { display:grid; grid-template-columns:300px 1fr; min-height:100vh; }
     .sidebar { background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto; }
-    .brand { font-size:24px; font-weight:800; margin:4px 8px 16px; }
     .search { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px; margin-bottom:12px; }
     .statbar { display:flex; gap:8px; flex-wrap:wrap; margin:0 6px 14px; } .pill { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; }
     details.group { border:1px solid var(--line); border-radius:14px; background:#fff; margin:10px 0; overflow:hidden; }
@@ -74,13 +73,12 @@ HTML_TEMPLATE = r'''<!doctype html>
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <div class="brand">agent文献库</div>
       <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
       <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
     <main class="main">
-      <section class="hero"><h1>agent文献库</h1><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
+      <section class="hero"><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
       <section id="paperList" class="list"></section>
     </main>
   </div>
@@ -232,21 +230,89 @@ def maybe_unpack_zip(path):
         zf.extractall(unpack_dir)
     return [p for p in unpack_dir.rglob('*') if p.is_file()]
 
+def fallback_title_from_filename(filename):
+    stem = Path(filename or '').stem
+    stem = re.sub(r'---[0-9a-fA-F-]{8,}$', '', stem)
+    stem = re.sub(r'(?i)_\d{4}_[A-Za-z]+$', '', stem)
+    stem = re.sub(r'(?i)_[A-Za-z]+$', '', stem)
+    stem = re.sub(r'_[\u4e00-\u9fff]{2,4}$', '', stem)
+    stem = stem.replace('_', ' ').replace('ﬁ', 'fi').replace('ﬃ', 'ffi').replace('ﬀ', 'ff')
+    stem = re.sub(r'\s+', ' ', stem).strip(' -—_:：,.;()[]')
+    return stem
+
+
+def normalize_title(title, fallback=''):
+    title = clean_text(title)
+    title = title.replace('ﬁ', 'fi').replace('ﬃ', 'ffi').replace('ﬀ', 'ff')
+    title = re.sub(r'\s+', ' ', title)
+    title = re.sub(r'(?i)^contents lists available at\s*', '', title)
+    title = re.sub(r'(?i)^available online\b.*$', '', title)
+    title = re.sub(r'(?i)^research article\b[:\s-]*', '', title)
+    title = re.sub(r'(?i)^article\b[:\s-]*', '', title)
+    title = re.sub(r'(?i)^www\.[^\s]+\s*', '', title)
+    title = re.sub(r'(?i)^li et al\.,\s*[^\n]*$', '', title)
+    title = re.sub(r'(?i)^photoacoustics\s+\d+.*$', '', title)
+    title = re.sub(r'(?i)^ieee transactions on [^\n]+$', '', title)
+    title = re.sub(r'(?i)^international journal of [^\n]+$', '', title)
+    title = re.sub(r'(?i)^school code[:：].*$', '', title)
+    title = re.sub(r'(?i)^学校代码[:：].*$', '', title)
+    title = re.sub(r'(?i)^长春理工大学学报（自然科学版）.*$', '', title)
+    title = re.sub(r'(?i)^journal of [^\n]+$', '', title)
+    title = re.sub(r'\b(Vol\.?\s*\d+|No\.?\s*\d+|\d{4})\b', '', title)
+    title = re.sub(r'\s+', ' ', title).strip(' -—_:：,.;()[]')
+    bad = [
+        r'(?i)^(sciencedirect|photoacoustics|journal homepage|issn)',
+        r'(?i)^robot\.\s*\d+',
+        r'(?i)^available online',
+        r'(?i)^contents lists available',
+    ]
+    if not title or any(re.search(p, title) for p in bad):
+        return fallback
+    return title
+
+
 def detect_title(text, fallback):
-    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
-    skip = re.compile(r'^(research article|article|www\.|adv\.|doi\b|abstract\b|摘要\b|keywords?\b|关键词\b|table\b|figure\b)', re.I)
-    for idx, ln in enumerate(lines[:24]):
-        compact = re.sub(r'\s+', ' ', ln)
-        if skip.match(compact):
+    lines = [re.sub(r'\s+', ' ', ln.strip()) for ln in text.splitlines() if ln.strip()]
+    skip = re.compile(
+        r'^(research article|article|www\.|adv\.|doi\b|abstract\b|摘要\b|keywords?\b|关键词\b|table\b|figure\b|contents lists available|available online|journal homepage|school code|学校代码|分类号|密级|学号|收稿日期|基金项目|作者简介|通讯作者|目\s*录|第[一二三四五六七八九十]+章|introduction\b)',
+        re.I,
+    )
+    candidates = []
+    for idx, ln in enumerate(lines[:40]):
+        compact = normalize_title(ln, '')
+        if not compact:
             continue
-        if len(compact) <= 12 or len(compact) >= 260:
+        if skip.match(ln):
             continue
-        if idx + 1 < len(lines[:24]) and len(compact.split()) <= 8:
-            merged = compact + ' ' + re.sub(r'\s+', ' ', lines[idx + 1].strip())
-            if 20 < len(merged) < 260 and not skip.match(merged):
-                return merged
-        return compact
-    return fallback
+        if len(compact) <= 8 or len(compact) >= 220:
+            continue
+        score = 0
+        if re.search(r'[\u4e00-\u9fff]{6,}', compact):
+            score += 4
+        if re.search(r'[A-Za-z]', compact):
+            score += 2
+        if ':' in compact or '：' in compact:
+            score += 1
+        if 20 <= len(compact) <= 140:
+            score += 2
+        if re.search(r'(university|journal|issn|science direct|photoacoustics|ieee transactions|school code|学校代码|分类号|密级|学号)', compact, re.I):
+            score -= 5
+        if idx < 12:
+            score += 2
+        if idx < 6:
+            score += 1
+        candidates.append((score, idx, compact))
+        if idx + 1 < len(lines[:40]) and len(compact.split()) <= 10:
+            merged = normalize_title(compact + ' ' + lines[idx + 1], '')
+            if 12 <= len(merged) <= 220 and not skip.match(merged):
+                merged_score = score + 1
+                if re.search(r'(university|journal|issn|science direct|photoacoustics|ieee transactions)', merged, re.I):
+                    merged_score -= 5
+                candidates.append((merged_score, idx, merged))
+    if candidates:
+        candidates.sort(key=lambda x: (-x[0], x[1], len(x[2])))
+        return candidates[0][2]
+    return normalize_title(fallback, fallback)
 
 def detect_year(text):
     m = re.search(r'\b(19\d{2}|20\d{2})\b', text)
@@ -331,7 +397,7 @@ def detect_tags(text, collections):
     return tags[:10]
 
 def build_record(path, text):
-    title = detect_title(text, path.stem)
+    title = detect_title(text, fallback_title_from_filename(path.name))
     abstract_original = extract_abstract(text) or '未提取到摘要'
     collections = attach_top_level(detect_collections(title, '' if abstract_original == '未提取到摘要' else abstract_original, text))
     primary = primary_from_collections(collections)
@@ -368,6 +434,8 @@ def ensure_structure(data):
         cols = attach_top_level(cols)
         paper['collections'] = cols
         paper['category'] = primary_from_collections(cols)
+        fallback_title = fallback_title_from_filename(paper.get('filename', ''))
+        paper['title'] = normalize_title(paper.get('title', ''), fallback_title)
         seen.update(cols)
     data['collections'] = sorted(seen | set(FLAT_COLLECTIONS))
     return data

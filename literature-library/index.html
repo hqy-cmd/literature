@@ -9,7 +9,6 @@
     * { box-sizing:border-box; } body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
     .layout { display:grid; grid-template-columns:300px 1fr; min-height:100vh; }
     .sidebar { background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto; }
-    .brand { font-size:24px; font-weight:800; margin:4px 8px 16px; }
     .search { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px; margin-bottom:12px; }
     .statbar { display:flex; gap:8px; flex-wrap:wrap; margin:0 6px 14px; } .pill { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; }
     details.group { border:1px solid var(--line); border-radius:14px; background:#fff; margin:10px 0; overflow:hidden; }
@@ -30,13 +29,12 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <div class="brand">agent文献库</div>
       <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
       <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
     <main class="main">
-      <section class="hero"><h1>agent文献库</h1><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
+      <section class="hero"><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
       <section id="paperList" class="list"></section>
     </main>
   </div>
@@ -61,7 +59,7 @@
   "papers": [
     {
       "id": "激光热疗皮下球形肿瘤的瞬态温度场模拟.pdf-1758591342",
-      "title": "长春理工大学学报（自然科学版） Journal of Changchun University of Science and Technology （Natural Science Edition）",
+      "title": "激光热疗皮下球形肿瘤的瞬态温度场模拟",
       "authors": [],
       "year": "2023",
       "category": "肿瘤消融",
@@ -83,7 +81,7 @@
     },
     {
       "id": "肾脏肿瘤射频消融术中无创测温技术及温度场重建的研究_李佳定.pdf-1767764518",
-      "title": "学校代码：10286分 类 号：R318.6密 级： 公开U D C：616学 号：206129 肾脏肿瘤射频消融术中无创测温技术",
+      "title": "肾脏肿瘤射频消融术中无创测温技术及温度场重建的研究 李佳定",
       "authors": [],
       "year": "2023",
       "category": "肿瘤消融",
@@ -139,7 +137,7 @@
     },
     {
       "id": "Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto_2020_Photoacous.pdf-1753848270",
-      "title": "Contents lists available atScienceDirect Photoacoustics",
+      "title": "Assessment-of-hessian-based-Frangi-vesselness-filter-in-opto",
       "authors": [
         "Antonia Longoa",
         "b",
@@ -171,7 +169,7 @@
     },
     {
       "id": "Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf-1772431068",
-      "title": "3064 IEEE TRANSACTIONS ON MEDICAL IMAGING, VOL. 39, NO. 10, OCTOBER 2020",
+      "title": "Deep Learning for Ultrasound Localization Microscopy",
       "authors": [
         "3064 IEEE TRANSACTIONS ON MEDICAL IMAGING",
         "VOL. 39",
@@ -200,7 +198,7 @@
     },
     {
       "id": "Human-scale navigation of magnetic microrobots in hepatic arteries.pdf-1772528838",
-      "title": "Li et al., Sci. Robot. 9, eadh8702 (2024) 14 February 2024",
+      "title": "Human-scale navigation of magnetic microrobots in hepatic arteries",
       "authors": [
         "Li et al.",
         "Sci. Robot. 9",
@@ -228,7 +226,7 @@
     },
     {
       "id": "MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia.pdf-1758710138",
-      "title": "International Journal of Hyperthermia ISSN: 0265-6736 (Print) 1464-5157 (Online) Journal homepage: www.tandfonline.com/journals/ihyt20",
+      "title": "MicroCT image-generated tumour geometry and SAR distribution for tumour temperature elevation simulations in magnetic nanoparticle hyperthermia",
       "authors": [
         "Alexander LeBrun",
         "Navid Manuchehrabadi",
@@ -256,7 +254,7 @@
     },
     {
       "id": "Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M_2020_Photoaco.pdf-1753848270",
-      "title": "Photoacoustics 20 (2020) 100204 Available online 25 September 2020",
+      "title": "Quickly-Alternating-Green-and-Red-Laser-Source-for-Real-time-M",
       "authors": [],
       "year": "2020",
       "category": "其他",
@@ -313,7 +311,7 @@
     },
     {
       "id": "wide-field polygon-scanning photoacoustic microscopy.pdf-1753262564",
-      "title": "Contents lists available at ScienceDirect Photoacoustics",
+      "title": "wide-field polygon-scanning photoacoustic microscopy",
       "authors": [
         "Jiangbo Chen a",
         "Yachao Zhang a",
@@ -342,7 +340,7 @@
     },
     {
       "id": "用于超快血流动力学成像的高效光声显微镜.pdf-1754536180",
-      "title": "High-EﬃciencyPhotoacousticMicroscopyforUltrafast HemodynamicImaging",
+      "title": "High-EfficiencyPhotoacousticMicroscopyforUltrafast HemodynamicImaging",
       "authors": [
         "Wei Qin",
         "Tingting Li",
