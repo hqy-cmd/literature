@@ -11,7 +11,7 @@ import sys
 import time
 from pathlib import Path
 
-BASE_DIR = Path.home() / 'Desktop' / '文献管理 html'
+BASE_DIR = Path.home() / 'Desktop' / '文献管理html'
 INBOX_DIR = BASE_DIR / 'inbox'
 INCOMING_DIR = BASE_DIR / 'incoming'
 UPDATE_SCRIPT = BASE_DIR / 'scripts' / 'update_library.py'
