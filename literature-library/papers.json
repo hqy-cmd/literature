@@ -154,7 +154,11 @@
       "source_note": "自动解析导入",
       "added_at": "2026-03-28 17:53",
       "file_path": "files/Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf",
-      "file_url": "files/Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf"
+      "file_url": "files/Deep_Learning_for_Ultrasound_Localization_Microscopy.pdf",
+      "manual_edit": true,
+      "locked_fields": [
+        "source_note"
+      ]
     },
     {
       "id": "Human-scale navigation of magnetic microrobots in hepatic arteries.pdf-1772528838",
