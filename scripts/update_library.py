@@ -90,8 +90,8 @@ HTML_TEMPLATE = r'''<!doctype html>
     <aside class="sidebar">
       <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
       <div class="console-box">
-        <input id="consoleInput" class="console-input" placeholder="输入自然语言默认检索；显式命令请写成 <改某篇文献 标题: 新标题>" />
-        <div class="console-hint">规则：尖括号命令执行修改；其他输入默认检索文献关键词、作者、期刊、摘要等。</div>
+        <input id="consoleInput" class="console-input" placeholder="试试：找一下机器人识别和抓取的相关文章 / 关于纳米温度计有哪些创新点" />
+        <div class="console-hint">当前为只读智能检索：支持自然语言查标题、作者、分类、标签、摘要，并给出相关结果与简单总结。</div>
         <div id="consoleResult" class="console-result"></div>
       </div>
       <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
@@ -141,43 +141,85 @@ HTML_TEMPLATE = r'''<!doctype html>
       const options = ['其他', ...Object.keys(menuGroups)];
       el.editCategory.innerHTML = options.map(x => `<option value="${x}" ${x===selected?'selected':''}>${x}</option>`).join('');
     }
-    function renderConsoleResults(result) {
-      if (!result) {
+    function tokenizeQuery(text) {
+      const raw = (text || '').toLowerCase().trim();
+      const zhPhrases = raw.match(/[\u4e00-\u9fff]{2,}/g) || [];
+      const enWords = raw.match(/[a-zA-Z][a-zA-Z\-]+/g) || [];
+      const base = [...zhPhrases, ...enWords].filter(Boolean);
+      const expansions = [];
+      const map = [
+        { keys: ['机器人', '抓取', '识别', '灵巧手'], add: ['robot', 'robotic', 'grasp', 'grasping', 'dexterous', 'visual', 'tactile', '机器人抓取', '视觉触觉融合', '灵巧手'] },
+        { keys: ['光声', '光声显微', 'photoacoustic', 'pam'], add: ['photoacoustic', 'microscopy', 'photoacoustic microscopy', '光声显微'] },
+        { keys: ['纳米温度计', '温度计', '测温', 'temperature', 'thermometer'], add: ['nanothermometer', 'temperature imaging', 'thermometry', '温度成像', '荧光纳米温度计'] },
+        { keys: ['脑肿瘤', '胶质瘤', 'glioma', 'glioblastoma'], add: ['脑肿瘤', '脑组织', 'glioma', 'glioblastoma', 'brain tumor'] },
+        { keys: ['消融', '热疗', 'ablation'], add: ['tumor ablation', 'thermal ablation', 'microwave ablation', '肿瘤消融'] },
+      ];
+      for (const rule of map) {
+        if (rule.keys.some(k => raw.includes(k.toLowerCase()))) expansions.push(...rule.add);
+      }
+      return [...new Set([...base, ...expansions])];
+    }
+    function scorePaperByTokens(paper, tokens) {
+      const title = (paper.title || '').toLowerCase();
+      const authors = normalizeList(paper.authors).join(' ').toLowerCase();
+      const category = (paper.category || '').toLowerCase();
+      const collections = normalizeList(paper.collections).join(' ').toLowerCase();
+      const tags = normalizeList(paper.tags).join(' ').toLowerCase();
+      const abs = `${paper.abstract_summary_zh || ''} ${paper.abstract_original || ''}`.toLowerCase();
+      const filename = (paper.filename || '').toLowerCase();
+      let score = 0;
+      const matched = [];
+      for (const token of tokens) {
+        if (!token) continue;
+        let hit = false;
+        if (title.includes(token)) { score += 8; hit = true; }
+        if (tags.includes(token)) { score += 6; hit = true; }
+        if (category.includes(token) || collections.includes(token)) { score += 5; hit = true; }
+        if (authors.includes(token)) { score += 4; hit = true; }
+        if (abs.includes(token)) { score += 3; hit = true; }
+        if (filename.includes(token)) { score += 2; hit = true; }
+        if (hit) matched.push(token);
+      }
+      return { score, matched:[...new Set(matched)] };
+    }
+    function summarizeSearchIntent(query, results) {
+      const q = (query || '').trim();
+      if (!results.length) return '没有找到明显相关的文献。';
+      const allTags = new Map();
+      results.slice(0, 5).forEach(r => {
+        normalizeList(r.tags).forEach(tag => allTags.set(tag, (allTags.get(tag) || 0) + 1));
+        normalizeList(r.collections).forEach(tag => allTags.set(tag, (allTags.get(tag) || 0) + 1));
+      });
+      const top = [...allTags.entries()].sort((a,b) => b[1]-a[1]).slice(0,4).map(x => x[0]);
+      if (!top.length) return `已找到 ${results.length} 篇和“${q}”相关的文献。`;
+      return `围绕“${q}”检索后，当前更相关的方向主要集中在：${top.join('、')}。已为你列出最相关的文献结果。`;
+    }
+    function runSmartSearch(query) {
+      const q = (query || '').trim();
+      if (!q) {
         el.consoleResult.textContent = '';
         return;
       }
-      if (result.mode === 'search') {
-        const lines = (result.results || []).map((x, i) => `${i+1}. ${x.title}｜${x.category || '未分类'}｜${x.year || '年份未知'}`);
-        el.consoleResult.textContent = lines.length ? lines.join('\n') : '没有找到相关文献。';
-        return;
-      }
-      if (result.mode === 'update' && result.ok) {
-        el.consoleResult.textContent = `修改成功：${result.target.title}`;
-        return;
-      }
-      if (result.candidates && result.candidates.length) {
-        el.consoleResult.textContent = '匹配到多篇，请说得更具体一些：\n' + result.candidates.map((x, i) => `${i+1}. ${x.title}`).join('\n');
-        return;
-      }
-      el.consoleResult.textContent = result.message || result.error || '执行失败';
-    }
-    async function runConsoleCommand(command) {
-      const text = (command || '').trim();
-      if (!text) return;
-      el.consoleResult.textContent = '处理中…';
-      try {
-        const resp = await fetch('http://127.0.0.1:8766/api/console', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: text })
-        });
-        const result = await resp.json();
-        renderConsoleResults(result);
-        if (result.mode === 'update' && result.ok) {
-          setTimeout(() => window.location.reload(), 500);
-        }
-      } catch (err) {
-        el.consoleResult.textContent = `控制台请求失败：${err.message}`;
+      const tokens = tokenizeQuery(q);
+      const ranked = state.allPapers.map(p => {
+        const { score, matched } = scorePaperByTokens(p, tokens);
+        return { ...p, _score: score, _matched: matched };
+      }).filter(x => x._score > 0).sort((a, b) => b._score - a._score).slice(0, 8);
+      const summary = summarizeSearchIntent(q, ranked);
+      const lines = ranked.map((x, i) => `${i+1}. ${x.title}｜${x.category || '未分类'}｜${x.year || '年份未知'}｜命中：${x._matched.slice(0,5).join('、')}`);
+      el.consoleResult.textContent = summary + '\n\n' + (lines.length ? lines.join('\n') : '没有找到相关文献。');
+      if (lines.length) {
+        state.keyword = '';
+        state.selectedFilter = '全部';
+        el.searchInput.value = '';
+        renderMenu();
+        el.paperList.innerHTML = ranked.map(p => {
+          const authors = Array.isArray(p.authors) ? p.authors.join('、') : safeText(p.authors, '作者未提取');
+          const collections = getCollections(p);
+          const tags = normalizeList(p.tags).filter(t => !collections.includes(t));
+          const href = p.file_url || p.file_path || '';
+          return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>相关度：${p._score}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags"><span class="tag">命中：${p._matched.slice(0,5).join('、')}</span>${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}<button type="button" class="link-btn" data-edit-id="${p.id}">编辑</button></div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details></article>`;
+        }).join('');
       }
     }
     function openEditor(id) {
@@ -277,7 +319,7 @@ HTML_TEMPLATE = r'''<!doctype html>
     el.consoleInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
-        runConsoleCommand(el.consoleInput.value);
+        runSmartSearch(el.consoleInput.value);
       }
     });
     el.editorCloseBtn.addEventListener('click', closeEditor);
