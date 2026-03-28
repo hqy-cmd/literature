@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "host": "218.244.147.33",
+  "user": "root",
+  "remote_path": "/var/www/literature-library/"
+}

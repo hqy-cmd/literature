@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>agent文献库</title>
+  <style>
+    :root { --bg:#f6f8fc; --panel:#fff; --text:#18212f; --muted:#667085; --line:#d7deea; --accent:#246bff; --accent-soft:#eef4ff; --tag:#eef2f7; --shadow:0 8px 24px rgba(16,24,40,.06); }
+    * { box-sizing:border-box; } body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+    .layout { display:grid; grid-template-columns:300px 1fr; min-height:100vh; }
+    .sidebar { background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto; }
+    .brand { font-size:24px; font-weight:800; margin:4px 8px 16px; }
+    .search { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px; margin-bottom:12px; }
+    .statbar { display:flex; gap:8px; flex-wrap:wrap; margin:0 6px 14px; } .pill { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; }
+    details.group { border:1px solid var(--line); border-radius:14px; background:#fff; margin:10px 0; overflow:hidden; }
+    details.group>summary { cursor:pointer; list-style:none; padding:12px 14px; font-weight:800; background:#fbfcff; } details.group>summary::-webkit-details-marker { display:none; }
+    .menu-body { padding:10px; display:grid; gap:8px; }
+    .filter-btn { width:100%; text-align:left; border:1px solid var(--line); background:#fff; color:var(--text); border-radius:12px; padding:10px 12px; cursor:pointer; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+    .filter-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+    .sub-list { display:grid; gap:6px; margin-top:4px; padding-left:6px; } .sub-list .filter-btn { font-size:13px; padding:9px 11px; }
+    .main { padding:20px 18px 40px; } .hero { background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); border:1px solid var(--line); border-radius:22px; padding:18px; box-shadow:var(--shadow); margin-bottom:16px; } .hero h1 { margin:0; font-size:28px; }
+    .hero-tools { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; } .ghost { border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 12px; font-size:14px; color:var(--text); }
+    .list { display:grid; gap:12px; } .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); } .title { font-size:19px; font-weight:800; margin:0 0 8px; }
+    .meta { color:var(--muted); font-size:13px; display:flex; gap:8px 12px; flex-wrap:wrap; margin-bottom:10px; } .summary { font-size:15px; margin-bottom:12px; } .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .tag { background:var(--tag); color:#314155; border-radius:999px; padding:4px 10px; font-size:12px; } .actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .link-btn { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--accent); background:#fff; font-size:14px; font-weight:700; }
+    details.paper-detail { border-top:1px dashed var(--line); padding-top:10px; margin-top:8px; } details.paper-detail summary { cursor:pointer; color:var(--accent); font-weight:700; list-style:none; } details.paper-detail summary::-webkit-details-marker { display:none; } .empty { color:var(--muted); text-align:center; padding:42px 16px; background:#fff; border:1px dashed var(--line); border-radius:16px; }
+    @media (max-width:900px) { .layout { grid-template-columns:1fr; } .sidebar { position:relative; height:auto; border-right:none; border-bottom:1px solid var(--line); } }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">agent文献库</div>
+      <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
+      <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
+      <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
+    </aside>
+    <main class="main">
+      <section class="hero"><h1>agent文献库</h1><div class="hero-tools"><button class="ghost" id="clearFilterBtn">清空筛选</button><span class="ghost" id="currentFilterLabel">当前：全部</span></div></section>
+      <section id="paperList" class="list"></section>
+    </main>
+  </div>
+  <script id="embeddedData" type="application/json">{
+  "version": 3,
+  "library_name": "agent文献库",
+  "collections": [
+    "可注射水凝胶",
+    "多智能体强化学习",
+    "机器人抓取",
+    "温度成像",
+    "灵巧手",
+    "生物可吸收材料",
+    "电免疫治疗",
+    "肿瘤消融",
+    "脑组织",
+    "脑肿瘤",
+    "荧光纳米温度计",
+    "视觉触觉融合"
+  ],
+  "papers": [
+    {
+      "id": "11930772-金天-生物医学工程系-vip---f9bfd2f7-8600-4930-a5f4-458b7bbdd015.pdf-1774331941",
+      "title": "面向血液动力学的光声显微 成像技术 及其 应用研究",
+      "authors": [],
+      "year": "2023",
+      "category": "脑肿瘤",
+      "collections": [
+        "肿瘤消融",
+        "脑组织",
+        "脑肿瘤",
+        "荧光纳米温度计"
+      ],
+      "tags": [
+        "实验验证",
+        "系统设计",
+        "算法",
+        "应用",
+        "肿瘤消融",
+        "脑组织",
+        "脑肿瘤",
+        "荧光纳米温度计"
+      ],
+      "abstract_original": "III \n \nAbstract \nNeuroimaging techniques are effective tools for investigating brain \nfunction. In the current neuroimaging field, mature technologies exist such as \ntwo-photon fluorescence imaging, wide -field fluorescence imaging, and \nelectroencephalography, which can directly image and characterize micro -, \nmeso -, and macro -level neural act ivity. However, for the other vital system in \nthe brain, the vascular system, the current mature functional magnetic \nresonance imaging and functional ultrasound technologies only support research \non main vessels or average hemodynamics. This creates ongoin g controversies \nregarding various blood transport issues related to brain function and makes it \nchallenging to cross -validate neural activity and hemodynamic information at \nthe microvascular level. Therefore, to further uncover the mystery of this \ncomplex system, there is an urgent need in neuroscience for a new imaging \ntechnique that can address hemodynamics and support micro and meso -level \nimaging. \nPhotoacoustic microscopy is an effective solution to this problem. This \nimaging technique relies mainly on t he photoacoustic effect, imaging by \nreceiving ultrasound signals emitted by chromophores excited by pulsed light. \nIt has inherent characteristics suitable for biological imaging, such as label -free, \nradiation -free, and non -invasive features. The imaging co ntrast comes from the \nchromophore's absorption ability of laser, and the amplitude of the resulting \nphotoacoustic signal directly indicates the concentration of hemoglobin , which \nis closely related to brain activity. In addition, the imaging resolution of this \ntechnology depends on the numerical aperture of the focusing objective and can \nreach submicron or even nanometer levels. The imaging speed can cover \nhemodynamic fluctuation frequencies, and the imaging field of view can also \ncover the mouse cortex. Ho wever, even though all the performance indicators of \nphotoacoustic microscopy can meet the needs of brain function research, the \nimaging system is typically complex, voluminous, and inflexible, which limits \nits development in the field of neuroscience. \nhttp://kc.sustech.edu.cn\n\nAbstract \nIV \n \nTherefore, this article conducted research on photoacoustic microscopy \nbrain imaging technology, including feasibility demonstration, imaging system \ndevelopment, and analysis method establishment. Feasibility demonstration is \nthe theoretical basis for all sub sequent research, which mainly deduces the \ngeneration principle of photoacoustic signals and the linear relationship \nbetween photoacoustic signals and chromophore concentration, demonstrates \nthe feasibility of using photoacoustic signals to reflect hemoglo bin \nconcentration, and the signal homogeneity of photoacoustic imaging technology \nand existing mature neuroimaging techniques. Based on theoretical research, \nthis article developed a rotating optical resolution photoacoustic microscope \nsuitable for imaging hemoglobin in the mouse cortex, with a two -dimensional \nscanning mirror and a line -focused ultrasound detector as the core devices and a \nnovel rotating scanning mechanism as the imaging basis. Compared with \nclassical photoacoustic microscopy imaging system s, the system integration and \nusability have been significantly improved, and high spatiotemporal resolution \nimaging of micro vessels within the mouse cortex can be easily achieved. In \naddition, this article added a dual -wavelength input module to the imag ing \nsystem to add blood oxygen saturation imaging function, and used \nphotoacoustic correlation spectroscopy to add blood flow velocity imaging \nfunction. The cortical vascular photoacoustic images obtained by the imaging \nsystem are processed using both stru ctural and functional analysis methods, \nwhich can extract various structural indicators such as vascular area ratio, \nvascular length, vascular branching number, total number of vessels, and \nvascular diameter, as well as various brain activity functional in formation such \nas low -frequency amplitude, neurovascular coupling, and cortical functional \nconnectivity, for a comprehensive analysis of the cortical vascular network \nfrom multiple perspectives. \nBased on the high -performance photoacoustic microscopy imagin g system \nand the accompanying data analysis methods, this article conducted in -depth \nresearch on multiple animal models, such as global epilepsy, focal epilepsy, \nlocal brain electrical stimulation, brain glioma, and local limb stimulation in \nmice. Specific ally, this article used functional analysis to demonstrate the vast \ndifference in abnormal brain activity and functional connectivity between two \nhttp://kc.sustech.edu.cn\n\nAbstract \nV \n \nepilepsy models and the propagation path of hemodynamic abnormalities in \nfocal epilepsy. At the same time, by comparing the brain activity responses of \nfocal epilepsy and local brain electrical stimulation, it revealed the long -range \nfunctional connections between the somatosensory cortex and motor cortex in \nthe cerebral cortex. In addition, it quantitatively demo nstrated the pro -growth \neffect of brain gliomas on the cortical vascular network, the interference effect \non cortical hemodynamic responses, and the destructive effect on regional and \nhemispheric functional connections. \nIn summary, this article designed an d developed a photoacoustic \nmicroscopy imaging system suitable for mouse brain function research, as well \nas accompanying data analysis methods, and conducted brain function research \non various mouse models. The theoretical analysis and application researc h \nconducted in this article fully demonstrate the brain function research \ncapabilities of the photoacoustic microscopy brain imaging technology \ndeveloped in this article, laying a solid foundation for the progress of imaging \nsystems in photoacoustic imagin g and providing a new method for mesoscopic \nbrain functional imaging based on hemodynamics for neuroscience research.",
+      "abstract_summary_zh": "这篇文献主要围绕“脑肿瘤”相关问题展开，核心对象是“面向血液动力学的光声显微 成像技术 及其 应用研究”所对应的方法、材料或系统。作者重点讨论了该方向中的关键挑战、解决思路以及验证结果，适合用来快速把握这项工作的研究重点和应用价值。",
+      "filename": "11930772-金天-生物医学工程系-vip---f9bfd2f7-8600-4930-a5f4-458b7bbdd015.pdf",
+      "source_note": "自动解析导入",
+      "added_at": "2026-03-24 13:59",
+      "file_path": "files/11930772-金天-生物医学工程系-vip---f9bfd2f7-8600-4930-a5f4-458b7bbdd015.pdf",
+      "file_url": "files/11930772-金天-生物医学工程系-vip---f9bfd2f7-8600-4930-a5f4-458b7bbdd015.pdf"
+    },
+    {
+      "id": "1-s2.0-S0736584525000754-main---9ec4ea63-e7bf-43d1-8119-26cc81e83d88.pdf-1774276118",
+      "title": "Dexterous hand towards intelligent manufacturing: A review of technologies, trends, and potential applications",
+      "authors": [],
+      "year": "2025",
+      "category": "灵巧手",
+      "collections": [
+        "灵巧手",
+        "机器人抓取"
+      ],
+      "tags": [
+        "综述",
+        "智能制造",
+        "灵巧手",
+        "机器人抓取",
+        "应用"
+      ],
+      "abstract_original": "Multi-fingered dexterous hands hold significant potential for addressing manipulation tasks in intelligent manufacturing, owing to their inherent anthropomorphic flexibility and rich perceptual capabilities. However, the functionality of dexterous hands in intelligent manufacturing remains unclear due to current technological limitations. This paper provides a review of the current research status of dexterous hands for manipulation tasks, with a specific focus on key technologies related to structure, perception, grasping, and manipulation skills. Furthermore, this review also highlights potential applications of dexterous hands in intelligent manufacturing, including manufacturing in narrow spaces, bin-picking, and in-situ manufacturing. We also discuss the research challenges for the wide adoption of dexterous hands. This review offers a comprehensive analysis of dexterous hands from a manufacturing perspective, contributing to future technological breakthroughs and the advancement of new-generation intelligent manufacturing.",
+      "abstract_summary_zh": "这篇文献是一篇面向智能制造场景的灵巧手综述，重点梳理了多指灵巧手在结构设计、感知能力、抓取与操作技能方面的发展现状。它关注的核心问题是，灵巧手虽然具有人形手的灵活性和感知潜力，但距离在真实制造环境中大规模落地仍有明显技术差距。文章同时讨论了狭小空间作业、bin-picking 和原位制造等潜在应用，对判断灵巧手在智能制造中的发展方向和关键瓶颈很有参考价值。",
+      "filename": "1-s2.0-S0736584525000754-main---9ec4ea63-e7bf-43d1-8119-26cc81e83d88.pdf",
+      "source_note": "自动解析导入，后经人工校正作者、标签与摘要",
+      "added_at": "2026-03-23 22:28",
+      "file_path": "files/1-s2.0-S0736584525000754-main---9ec4ea63-e7bf-43d1-8119-26cc81e83d88.pdf",
+      "file_url": "files/1-s2.0-S0736584525000754-main---9ec4ea63-e7bf-43d1-8119-26cc81e83d88.pdf"
+    },
+    {
+      "id": "33599-Article_Text-37667-1-2-20250410---1d7c2f61-de7a-4bc6-9d6e-da460c781689.pdf-1774270932",
+      "title": "Multi-fingered Hand Grasps with Visuo-Tactile Fusion via Multi-Agent Deep Reinforcement Learning",
+      "authors": [
+        "Peida Jia",
+        "Xuanheng Li",
+        "Tianqiang Zhu",
+        "Rina Wu",
+        "Xiangbo Lin",
+        "Yi Sun"
+      ],
+      "year": "2025",
+      "category": "灵巧手",
+      "collections": [
+        "灵巧手",
+        "机器人抓取",
+        "视觉触觉融合",
+        "多智能体强化学习"
+      ],
+      "tags": [
+        "机器人抓取",
+        "多智能体强化学习",
+        "视觉触觉融合",
+        "灵巧手",
+        "实验验证",
+        "人工智能与机器学习"
+      ],
+      "abstract_original": "Humans achieve contact-rich dexterous grasping through the synergy of visual and tactile information. However, the high-dimensional action space of high DoF multi-fingered hands poses significant challenges to this operation. In this study, we address this complexity by controlling the robotic hand at the reduced dimensional level of individual fingers instead of the entire hand, and develop a finger-based multi-agent deep reinforcement learning strategy by regarding the wrist, arm, and each finger of the hand as intelligent agents. We commence by applying a single-agent reinforcement learning algorithm to guide the whole hand to reach the feasible approaching direction and distance to the object. Then, we develop neuroscience-inspired visuo-tactile fusion networks to train multiple agents to control their assigned fingers by effectively leveraging visual and tactile feedback. This enables dynamic and collaborative adjustments of finger-object interactions, ultimately achieving precise contact with specific areas of the objects. The grasping results on 8 objects show that our approach can achieve stable and compliant grasps. To the best of our knowledge, this is the first work that employs a finger-based multi-agent reinforcement learning approach to control the dexterous grasping process under the guidance of both visual and tactile feedback.",
+      "abstract_summary_zh": "这篇文献研究的是多指灵巧手在视觉和触觉共同引导下的稳定抓取问题，核心方法是把手腕、机械臂和每根手指都视为独立智能体，用多智能体深度强化学习来协同控制。作者先让整只手完成接近物体的动作，再通过视觉—触觉融合网络细化各手指的接触与调整，从而降低高自由度抓取的控制难度。它的价值在于为灵巧手抓取提供了一种更接近人类感知协同方式的控制框架，对机器人精细操作和触觉感知抓取都有参考意义。",
+      "filename": "33599-Article_Text-37667-1-2-20250410---1d7c2f61-de7a-4bc6-9d6e-da460c781689.pdf",
+      "source_note": "自动解析导入，后经人工校正标题、标签与摘要",
+      "added_at": "2026-03-23 21:02",
+      "file_path": "files/33599-Article_Text-37667-1-2-20250410---1d7c2f61-de7a-4bc6-9d6e-da460c781689.pdf",
+      "file_url": "files/33599-Article_Text-37667-1-2-20250410---1d7c2f61-de7a-4bc6-9d6e-da460c781689.pdf"
+    },
+    {
+      "id": "s41467-025-65785-x---46159190-0d23-4624-b401-955ae44354e9.pdf-1774270589",
+      "title": "Injectable bioresorbable conductive hydrogels for multimodal brain tumor electroimmunotherapy",
+      "authors": [
+        "Amit Singh Yadav",
+        "Umut Aydemir",
+        "Karin Hellman",
+        "Peter Ekström",
+        "Abdelrazek H. Mousa",
+        "Jiaxin Li",
+        "Muhammad Anwar Shameem",
+        "Cedric Dicko",
+        "Johan Bengzon",
+        "Fredrik Ek",
+        "Martin Hjort",
+        "Roger Olsson"
+      ],
+      "year": "2025",
+      "category": "脑肿瘤",
+      "collections": [
+        "脑组织",
+        "脑肿瘤",
+        "电免疫治疗",
+        "可注射水凝胶",
+        "生物可吸收材料"
+      ],
+      "tags": [
+        "脑肿瘤",
+        "电免疫治疗",
+        "可注射水凝胶",
+        "生物可吸收材料",
+        "实验验证",
+        "脑组织"
+      ],
+      "abstract_original": "Current electrode technologies are too rigid for safe and effective delivery of electrotherapy in the brain, and patients with glioblastoma continue to face a devastating prognosis, with median survival stalled at 15 months despite intensive treatment with surgery, radiation, and chemotherapy. But these conventional approaches potentially compromise immune function, underscoring the urgent need for therapies that activate, rather than suppress, the immune system. Therefore, we introduce injectable conductive hydrogels engineered to match the softness of brain tissue while exhibiting electrical conductivities up to three orders of magnitude higher than any previously reported injectable hydrogels. They can be implanted through minimally invasive syringe capillaries as narrow as 30 µm, avoiding brain damage while enabling local and conformal delivery. The work positions these bioresorbable conductive hydrogels as a platform for multimodal brain tumor electroimmunotherapy.",
+      "abstract_summary_zh": "这篇文献提出了一种可注射、可吸收、具高导电性的脑组织适配水凝胶，用于脑肿瘤的多模态电免疫治疗。它关注的核心问题，是传统脑部电极过于刚硬、难以安全贴合组织，同时现有治疗手段对免疫系统支持不足。作者通过构建柔软且高导电的水凝胶材料，尝试实现更微创、更局部、更贴合脑组织的治疗递送方式，对脑肿瘤治疗器械与材料一体化设计有明显参考价值。",
+      "filename": "s41467-025-65785-x---46159190-0d23-4624-b401-955ae44354e9.pdf",
+      "source_note": "自动解析导入，后经人工校正标题、作者、分类与摘要",
+      "added_at": "2026-03-23 20:56",
+      "file_path": "files/s41467-025-65785-x---46159190-0d23-4624-b401-955ae44354e9.pdf",
+      "file_url": "files/s41467-025-65785-x---46159190-0d23-4624-b401-955ae44354e9.pdf"
+    },
+    {
+      "id": "Advanced_Materials_2025_Chen_Time_Resolved_Ratiometric_Fluor---caef2bdb-c749-4190-bd85-02ee98b8ce18.pdf-1774269115",
+      "title": "Time-Resolved Ratiometric Fluorescence Nanothermometer for Real-Time Endoscopic Temperature Guidance during Tumor Ablation",
+      "authors": [
+        "Lei Chen",
+        "Jiamiao Yin",
+        "Yiran Wang",
+        "Yiwei Fan",
+        "Yuetian Pei",
+        "Zelun Cai",
+        "Wenchao Yan",
+        "Donghao Hu",
+        "Qingbing Wang",
+        "Huadong Wang",
+        "Zhiwei Liu",
+        "Zuqiang Bian",
+        "Fuyou Li"
+      ],
+      "year": "2025",
+      "category": "肿瘤消融",
+      "collections": [
+        "肿瘤消融",
+        "温度成像",
+        "荧光纳米温度计"
+      ],
+      "tags": [
+        "温度成像",
+        "肿瘤消融",
+        "荧光纳米温度计",
+        "内窥引导",
+        "实验验证"
+      ],
+      "abstract_original": "Thermal ablation is a common treatment option for early-stage cancers, but the lack of real-time temperature imaging feedback method increases the risk of incomplete or excessive ablation. Although ratiometric nanothermometer offers a rapid temperature imaging solution, accurate in vivo signal extraction remains challenging due to the autofluorescence and wavelength-dependent tissue absorption and scattering. Herein, a time-resolved ratiometric fluorescence nanothermometer composed of europium and iridium complex with identical working wavelength but distinguishing lifetimes is reported, whose well-designed structures enable 450 nm excitation of both complexes with a high quantum yield (57.8%). Based on the nanothermometer, accurate signal extraction is realized in whole blood, beneath a 2 cm tissue phantom and a 5 mm pork slice through a time-resolved ratiometric method. By leveraging the exceptional thermal sensitivity (6.9% K−1), high temperature resolution (0.02 K), and clinically relevant temperature range (30–96 °C) of the nanothermometer, a fluorescence temperature endoscopy system is further designed with a real-time temperature imaging speed of 10 fps, which is applied to minimally invasive temperature monitoring during microwave ablation of liver tumors in rabbits, realizing precise ablation control through dynamic ablation power adjustment. The real-time and accurate temperature imaging performance of the nanothermometer may offer a new perspective for intraoperative guidance.",
+      "abstract_summary_zh": "这篇文献提出了一种用于肿瘤消融术中温度引导的时间分辨比率型荧光纳米温度计，并进一步做成了可实时成像的内窥温度监测系统。它要解决的核心问题，是在体内组织自发荧光、吸收和散射干扰下，如何稳定、准确地获得消融区域温度。作者通过寿命可区分但工作波长一致的铕/铱复合体系，实现了更可靠的温度读出，并在动物肝肿瘤微波消融中验证了对消融过程精细控制的价值。",
+      "filename": "Advanced_Materials_2025_Chen_Time_Resolved_Ratiometric_Fluor---caef2bdb-c749-4190-bd85-02ee98b8ce18.pdf",
+      "source_note": "自动解析导入，后经人工校正标题、作者、分类与摘要",
+      "added_at": "2026-03-23 20:32",
+      "file_path": "files/Advanced_Materials_2025_Chen_Time_Resolved_Ratiometric_Fluor---caef2bdb-c749-4190-bd85-02ee98b8ce18.pdf",
+      "file_url": "files/Advanced_Materials_2025_Chen_Time_Resolved_Ratiometric_Fluor---caef2bdb-c749-4190-bd85-02ee98b8ce18.pdf"
+    }
+  ],
+  "menu_groups": {
+    "灵巧手": [
+      "机器人抓取",
+      "视觉触觉融合",
+      "多智能体强化学习"
+    ],
+    "脑肿瘤": [
+      "脑组织",
+      "电免疫治疗",
+      "可注射水凝胶",
+      "生物可吸收材料"
+    ],
+    "肿瘤消融": [
+      "温度成像",
+      "荧光纳米温度计"
+    ]
+  }
+}</script>
+  <script>
+    const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
+    const menuGroups = data.menu_groups || {};
+    const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部' };
+    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), clearFilterBtn:document.getElementById('clearFilterBtn'), currentFilterLabel:document.getElementById('currentFilterLabel') };
+    const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
+    const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
+    const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
+    const countByName = name => state.allPapers.filter(p => getCollections(p).includes(name) || p.category===name).length;
+    function matchesKeyword(p, keyword) { if(!keyword) return true; const hay=[p.title,p.authors,p.year,p.category,getCollections(p).join(' '),normalizeList(p.tags).join(' '),p.abstract_original,p.abstract_summary_zh,p.filename].join(' ').toLowerCase(); return hay.includes(keyword.toLowerCase()); }
+    function matchesFilter(p) { if(state.selectedFilter==='全部') return true; return p.category===state.selectedFilter || getCollections(p).includes(state.selectedFilter); }
+    function filteredPapers() { return state.allPapers.filter(p => matchesFilter(p) && matchesKeyword(p, state.keyword)); }
+    function renderMenu() {
+      const topCount = Object.keys(menuGroups).length;
+      el.collectionCount.textContent = `${topCount} 类`;
+      let html = `<button class="filter-btn ${state.selectedFilter==='全部'?'active':''}" data-name="全部"><span>全部</span><span>${state.allPapers.length}</span></button>`;
+      for (const [top, children] of Object.entries(menuGroups)) {
+        const topActive = state.selectedFilter===top ? 'active' : '';
+        html += `<details class="group" open><summary>${top}</summary><div class="menu-body"><button class="filter-btn ${topActive}" data-name="${top}"><span>${top}</span><span>${countByName(top)}</span></button><div class="sub-list">`;
+        children.forEach(child => {
+          const active = state.selectedFilter===child ? 'active' : '';
+          html += `<button class="filter-btn ${active}" data-name="${child}"><span>${child}</span><span>${countByName(child)}</span></button>`;
+        });
+        html += `</div></div></details>`;
+      }
+      el.menuTree.innerHTML = html;
+      el.menuTree.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { state.selectedFilter = btn.dataset.name; renderMenu(); renderPapers(); }));
+      el.currentFilterLabel.textContent = `当前：${state.selectedFilter}`;
+    }
+    function renderPapers() {
+      const papers = filteredPapers();
+      el.paperCount.textContent = `${papers.length} 篇`;
+      if (!papers.length) { el.paperList.innerHTML = '<div class="empty">当前筛选条件下没有文献。</div>'; return; }
+      el.paperList.innerHTML = papers.map(p => {
+        const authors = Array.isArray(p.authors) ? p.authors.join('、') : safeText(p.authors, '作者未提取');
+        const collections = getCollections(p);
+        const tags = normalizeList(p.tags).filter(t => !collections.includes(t));
+        const href = p.file_url || p.file_path || '';
+        return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>加入时间：${safeText(p.added_at, '未记录')}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags">${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}</div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details><details class="paper-detail"><summary>查看补充信息</summary><div>原始文件名：${safeText(p.filename, '未记录')}</div><div>来源备注：${safeText(p.source_note, '未记录')}</div><div>原文路径：${safeText(p.file_path || p.file_url, '未记录')}</div></details></article>`;
+      }).join('');
+    }
+    el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
+    el.clearFilterBtn.addEventListener('click', () => { state.keyword=''; state.selectedFilter='全部'; el.searchInput.value=''; renderMenu(); renderPapers(); });
+    renderMenu(); renderPapers();
+  </script>
+</body>
+</html>
