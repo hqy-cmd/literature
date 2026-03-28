@@ -54,6 +54,10 @@ HTML_TEMPLATE = r'''<!doctype html>
     .layout { display:grid; grid-template-columns:300px 1fr; min-height:100vh; }
     .sidebar { background:var(--panel); border-right:1px solid var(--line); padding:18px 14px; position:sticky; top:0; height:100vh; overflow:auto; }
     .search { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px; margin-bottom:12px; }
+    .console-box { background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; }
+    .console-input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; }
+    .console-hint { font-size:12px; color:var(--muted); margin-top:8px; }
+    .console-result { margin-top:10px; font-size:13px; color:var(--text); white-space:pre-wrap; }
     .statbar { display:flex; gap:8px; flex-wrap:wrap; margin:0 6px 14px; } .pill { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; }
     details.group { border:1px solid var(--line); border-radius:14px; background:#fff; margin:10px 0; overflow:hidden; }
     details.group>summary { cursor:pointer; list-style:none; padding:12px 14px; font-weight:800; background:#fbfcff; } details.group>summary::-webkit-details-marker { display:none; }
@@ -85,6 +89,11 @@ HTML_TEMPLATE = r'''<!doctype html>
   <div class="layout">
     <aside class="sidebar">
       <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
+      <div class="console-box">
+        <input id="consoleInput" class="console-input" placeholder="输入自然语言默认检索；显式命令请写成 <改某篇文献 标题: 新标题>" />
+        <div class="console-hint">规则：尖括号命令执行修改；其他输入默认检索文献关键词、作者、期刊、摘要等。</div>
+        <div id="consoleResult" class="console-result"></div>
+      </div>
       <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
@@ -120,7 +129,7 @@ HTML_TEMPLATE = r'''<!doctype html>
     const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
     const menuGroups = data.menu_groups || {};
     const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部', editingId:null };
-    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
+    const el = { searchInput:document.getElementById('searchInput'), consoleInput:document.getElementById('consoleInput'), consoleResult:document.getElementById('consoleResult'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
     const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
     const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
     const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
@@ -131,6 +140,45 @@ HTML_TEMPLATE = r'''<!doctype html>
     function fillCategoryOptions(selected) {
       const options = ['其他', ...Object.keys(menuGroups)];
       el.editCategory.innerHTML = options.map(x => `<option value="${x}" ${x===selected?'selected':''}>${x}</option>`).join('');
+    }
+    function renderConsoleResults(result) {
+      if (!result) {
+        el.consoleResult.textContent = '';
+        return;
+      }
+      if (result.mode === 'search') {
+        const lines = (result.results || []).map((x, i) => `${i+1}. ${x.title}｜${x.category || '未分类'}｜${x.year || '年份未知'}`);
+        el.consoleResult.textContent = lines.length ? lines.join('\n') : '没有找到相关文献。';
+        return;
+      }
+      if (result.mode === 'update' && result.ok) {
+        el.consoleResult.textContent = `修改成功：${result.target.title}`;
+        return;
+      }
+      if (result.candidates && result.candidates.length) {
+        el.consoleResult.textContent = '匹配到多篇，请说得更具体一些：\n' + result.candidates.map((x, i) => `${i+1}. ${x.title}`).join('\n');
+        return;
+      }
+      el.consoleResult.textContent = result.message || result.error || '执行失败';
+    }
+    async function runConsoleCommand(command) {
+      const text = (command || '').trim();
+      if (!text) return;
+      el.consoleResult.textContent = '处理中…';
+      try {
+        const resp = await fetch('http://127.0.0.1:8766/api/console', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: text })
+        });
+        const result = await resp.json();
+        renderConsoleResults(result);
+        if (result.mode === 'update' && result.ok) {
+          setTimeout(() => window.location.reload(), 500);
+        }
+      } catch (err) {
+        el.consoleResult.textContent = `控制台请求失败：${err.message}`;
+      }
     }
     function openEditor(id) {
       const paper = state.allPapers.find(p => p.id === id);
@@ -226,6 +274,12 @@ HTML_TEMPLATE = r'''<!doctype html>
       }).join('');
     }
     el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
+    el.consoleInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runConsoleCommand(el.consoleInput.value);
+      }
+    });
     el.editorCloseBtn.addEventListener('click', closeEditor);
     el.editorCancelBtn.addEventListener('click', closeEditor);
     el.editorSaveBtn.addEventListener('click', saveEditor);
