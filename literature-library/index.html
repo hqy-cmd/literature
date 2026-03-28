@@ -17,9 +17,7 @@
     .filter-btn { width:100%; text-align:left; border:1px solid var(--line); background:#fff; color:var(--text); border-radius:12px; padding:10px 12px; cursor:pointer; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
     .filter-btn.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
     .sub-list { display:grid; gap:6px; margin-top:4px; padding-left:6px; } .sub-list .filter-btn { font-size:13px; padding:9px 11px; }
-    .main { padding:20px 18px 40px; } .hero { background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%); border:1px solid var(--line); border-radius:22px; padding:14px 18px; box-shadow:var(--shadow); margin-bottom:16px; }
-    .hero-tools { display:flex; gap:10px; flex-wrap:wrap; align-items:center; } .ghost { border:1px solid var(--line); background:#fff; border-radius:12px; padding:10px 12px; font-size:14px; color:var(--text); cursor:pointer; }
-    .ghost-label { cursor:pointer; }
+    .main { padding:20px 18px 40px; }
     .list { display:grid; gap:12px; } .card { background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); } .title { font-size:19px; font-weight:800; margin:0 0 8px; }
     .meta { color:var(--muted); font-size:13px; display:flex; gap:8px 12px; flex-wrap:wrap; margin-bottom:10px; } .summary { font-size:15px; margin-bottom:12px; } .tags { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
     .tag { background:var(--tag); color:#314155; border-radius:999px; padding:4px 10px; font-size:12px; } .actions { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; } .link-btn { display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:8px 12px; text-decoration:none; color:var(--accent); background:#fff; font-size:14px; font-weight:700; }
@@ -35,7 +33,6 @@
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
     <main class="main">
-      <section class="hero"><div class="hero-tools"><button type="button" class="ghost" id="clearFilterBtn">清空筛选</button><button type="button" class="ghost ghost-label" id="currentFilterLabel">当前：全部</button></div></section>
       <section id="paperList" class="list"></section>
     </main>
   </div>
@@ -567,7 +564,7 @@
     const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
     const menuGroups = data.menu_groups || {};
     const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部' };
-    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), clearFilterBtn:document.getElementById('clearFilterBtn'), currentFilterLabel:document.getElementById('currentFilterLabel') };
+    const el = { searchInput:document.getElementById('searchInput'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount') };
     const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
     const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
     const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
@@ -575,13 +572,6 @@
     function matchesKeyword(p, keyword) { if(!keyword) return true; const hay=[p.title,p.authors,p.year,p.category,getCollections(p).join(' '),normalizeList(p.tags).join(' '),p.abstract_original,p.abstract_summary_zh,p.filename].join(' ').toLowerCase(); return hay.includes(keyword.toLowerCase()); }
     function matchesFilter(p) { if(state.selectedFilter==='全部') return true; return p.category===state.selectedFilter || getCollections(p).includes(state.selectedFilter); }
     function filteredPapers() { return state.allPapers.filter(p => matchesFilter(p) && matchesKeyword(p, state.keyword)); }
-    function resetFilters() {
-      state.keyword='';
-      state.selectedFilter='全部';
-      el.searchInput.value='';
-      renderMenu();
-      renderPapers();
-    }
     function renderMenu() {
       const topCount = Object.keys(menuGroups).length;
       el.collectionCount.textContent = `${topCount} 类`;
@@ -597,7 +587,6 @@
       }
       el.menuTree.innerHTML = html;
       el.menuTree.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { state.selectedFilter = btn.dataset.name; renderMenu(); renderPapers(); }));
-      el.currentFilterLabel.textContent = `当前：${state.selectedFilter}`;
     }
     function renderPapers() {
       const papers = filteredPapers();
@@ -612,8 +601,6 @@
       }).join('');
     }
     el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
-    el.clearFilterBtn.addEventListener('click', resetFilters);
-    el.currentFilterLabel.addEventListener('click', resetFilters);
     renderMenu(); renderPapers();
   </script>
 </body>
