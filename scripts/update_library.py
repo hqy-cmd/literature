@@ -58,6 +58,9 @@ HTML_TEMPLATE = r'''<!doctype html>
     .console-input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px; }
     .console-hint { font-size:12px; color:var(--muted); margin-top:8px; }
     .console-result { margin-top:10px; font-size:13px; color:var(--text); white-space:pre-wrap; }
+    .result-bar { display:flex; gap:10px; align-items:center; justify-content:space-between; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
+    .result-bar.hidden { display:none; }
+    .result-summary { font-size:14px; color:var(--text); }
     .statbar { display:flex; gap:8px; flex-wrap:wrap; margin:0 6px 14px; } .pill { background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:6px 10px; font-size:12px; font-weight:700; }
     details.group { border:1px solid var(--line); border-radius:14px; background:#fff; margin:10px 0; overflow:hidden; }
     details.group>summary { cursor:pointer; list-style:none; padding:12px 14px; font-weight:800; background:#fbfcff; } details.group>summary::-webkit-details-marker { display:none; }
@@ -98,6 +101,10 @@ HTML_TEMPLATE = r'''<!doctype html>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
     </aside>
     <main class="main">
+      <section id="resultBar" class="result-bar hidden">
+        <div id="resultSummary" class="result-summary"></div>
+        <button type="button" id="clearSmartSearchBtn" class="link-btn">返回全部文献</button>
+      </section>
       <section id="paperList" class="list"></section>
     </main>
   </div>
@@ -128,8 +135,8 @@ HTML_TEMPLATE = r'''<!doctype html>
   <script>
     const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
     const menuGroups = data.menu_groups || {};
-    const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部', editingId:null };
-    const el = { searchInput:document.getElementById('searchInput'), consoleInput:document.getElementById('consoleInput'), consoleResult:document.getElementById('consoleResult'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
+    const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部', editingId:null, smartResults:null, smartQuery:'' };
+    const el = { searchInput:document.getElementById('searchInput'), consoleInput:document.getElementById('consoleInput'), consoleResult:document.getElementById('consoleResult'), resultBar:document.getElementById('resultBar'), resultSummary:document.getElementById('resultSummary'), clearSmartSearchBtn:document.getElementById('clearSmartSearchBtn'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
     const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
     const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
     const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
@@ -197,7 +204,7 @@ HTML_TEMPLATE = r'''<!doctype html>
     function runSmartSearch(query) {
       const q = (query || '').trim();
       if (!q) {
-        el.consoleResult.textContent = '';
+        clearSmartSearch();
         return;
       }
       const tokens = tokenizeQuery(q);
@@ -208,19 +215,15 @@ HTML_TEMPLATE = r'''<!doctype html>
       const summary = summarizeSearchIntent(q, ranked);
       const lines = ranked.map((x, i) => `${i+1}. ${x.title}｜${x.category || '未分类'}｜${x.year || '年份未知'}｜命中：${x._matched.slice(0,5).join('、')}`);
       el.consoleResult.textContent = summary + '\n\n' + (lines.length ? lines.join('\n') : '没有找到相关文献。');
-      if (lines.length) {
-        state.keyword = '';
-        state.selectedFilter = '全部';
-        el.searchInput.value = '';
-        renderMenu();
-        el.paperList.innerHTML = ranked.map(p => {
-          const authors = Array.isArray(p.authors) ? p.authors.join('、') : safeText(p.authors, '作者未提取');
-          const collections = getCollections(p);
-          const tags = normalizeList(p.tags).filter(t => !collections.includes(t));
-          const href = p.file_url || p.file_path || '';
-          return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>相关度：${p._score}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags"><span class="tag">命中：${p._matched.slice(0,5).join('、')}</span>${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}<button type="button" class="link-btn" data-edit-id="${p.id}">编辑</button></div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details></article>`;
-        }).join('');
-      }
+      state.smartQuery = q;
+      state.smartResults = ranked;
+      el.resultSummary.textContent = lines.length ? `关于“${q}”共筛出 ${ranked.length} 篇较相关文献。` : `关于“${q}”没有筛到相关文献。`;
+      el.resultBar.classList.remove('hidden');
+      state.keyword = '';
+      state.selectedFilter = '全部';
+      el.searchInput.value = '';
+      renderMenu();
+      renderPapers();
     }
     function openEditor(id) {
       const paper = state.allPapers.find(p => p.id === id);
@@ -303,8 +306,18 @@ HTML_TEMPLATE = r'''<!doctype html>
       el.menuTree.innerHTML = html;
       el.menuTree.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { state.selectedFilter = btn.dataset.name; renderMenu(); renderPapers(); }));
     }
+    function clearSmartSearch() {
+      state.smartResults = null;
+      state.smartQuery = '';
+      el.consoleInput.value = '';
+      el.consoleResult.textContent = '';
+      el.resultSummary.textContent = '';
+      el.resultBar.classList.add('hidden');
+      renderMenu();
+      renderPapers();
+    }
     function renderPapers() {
-      const papers = filteredPapers();
+      const papers = state.smartResults || filteredPapers();
       el.paperCount.textContent = `${papers.length} 篇`;
       if (!papers.length) { el.paperList.innerHTML = '<div class="empty">当前筛选条件下没有文献。</div>'; return; }
       el.paperList.innerHTML = papers.map(p => {
@@ -315,13 +328,21 @@ HTML_TEMPLATE = r'''<!doctype html>
         return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>加入时间：${safeText(p.added_at, '未记录')}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags">${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}<button type="button" class="link-btn" data-edit-id="${p.id}">编辑</button></div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details><details class="paper-detail"><summary>查看补充信息</summary><div>原始文件名：${safeText(p.filename, '未记录')}</div><div>来源备注：${safeText(p.source_note, '未记录')}</div><div>原文路径：${safeText(p.file_path || p.file_url, '未记录')}</div></details></article>`;
       }).join('');
     }
-    el.searchInput.addEventListener('input', e => { state.keyword = e.target.value.trim(); renderPapers(); });
+    el.searchInput.addEventListener('input', e => {
+      state.smartResults = null;
+      state.smartQuery = '';
+      el.resultBar.classList.add('hidden');
+      el.consoleResult.textContent = '';
+      state.keyword = e.target.value.trim();
+      renderPapers();
+    });
     el.consoleInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();
         runSmartSearch(el.consoleInput.value);
       }
     });
+    el.clearSmartSearchBtn.addEventListener('click', clearSmartSearch);
     el.editorCloseBtn.addEventListener('click', closeEditor);
     el.editorCancelBtn.addEventListener('click', closeEditor);
     el.editorSaveBtn.addEventListener('click', saveEditor);
