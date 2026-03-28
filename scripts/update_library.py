@@ -194,13 +194,24 @@ def read_pdf(path):
     try:
         from pypdf import PdfReader
         reader = PdfReader(str(path))
-        return '\n'.join((page.extract_text() or '') for page in reader.pages)
+        text = '\n'.join((page.extract_text() or '') for page in reader.pages)
+        if text.strip():
+            return text
     except Exception:
-        try:
-            out = subprocess.run(['pdftotext', str(path), '-'], capture_output=True, text=True, check=False)
-            return out.stdout or ''
-        except Exception:
-            return ''
+        pass
+    try:
+        import fitz
+        doc = fitz.open(str(path))
+        text = '\n'.join((doc.load_page(i).get_text('text') or '') for i in range(doc.page_count))
+        if text.strip():
+            return text
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(['pdftotext', str(path), '-'], capture_output=True, text=True, check=False)
+        return out.stdout or ''
+    except Exception:
+        return ''
 
 def extract_text(path):
     suffix = path.suffix.lower()
