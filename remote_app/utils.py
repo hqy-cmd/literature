@@ -94,6 +94,48 @@ def ensure_list(value) -> list[str]:
     return [str(value).strip()] if str(value).strip() else []
 
 
+def split_sentences_zh(text: str) -> list[str]:
+    if not text:
+        return []
+    parts = re.split(r"(?<=[。！？!?])\s+|(?<=[。！？!?])", text.strip())
+    cleaned = [re.sub(r"\s+", " ", x).strip() for x in parts if x and x.strip()]
+    return cleaned
+
+
+def compact_to_two_sentences(text: str, fallback: str = "暂无摘要。") -> str:
+    lines = split_sentences_zh(text)
+    if not lines:
+        value = re.sub(r"\s+", " ", (text or "").strip())
+        if not value:
+            return fallback
+        if len(value) > 120:
+            value = value[:120].rstrip("，,；;。.!?！？")
+        if value and value[-1] not in "。.!?！？":
+            value = value + "。"
+        return value
+    chosen = lines[:2]
+    value = " ".join(chosen).strip()
+    if len(value) > 180:
+        value = value[:180].rstrip("，,；;。.!?！？") + "。"
+    return value
+
+
+def build_list_summary(title: str, category: str, abstract_text: str) -> str:
+    clean_title = re.sub(r"\s+", " ", (title or "").strip())
+    clean_title = clean_title[:42] if clean_title else "该研究"
+    first = f"研究对象：{clean_title}（{category or '其他'}）。"
+    detail = compact_to_two_sentences(abstract_text, fallback="")
+    detail_lines = split_sentences_zh(detail)
+    second_seed = detail_lines[0] if detail_lines else ""
+    if second_seed:
+        second_seed = second_seed.rstrip("。.!?！？")
+        second_seed = second_seed[:68]
+        second = f"主要贡献：{second_seed}。"
+    else:
+        second = "主要贡献：给出了可复用的方法与实验结论。"
+    return f"{first} {second}"
+
+
 def normalize_top_category(category: str | None, collections: list[str] | None = None) -> str:
     names: list[str] = []
     if category:

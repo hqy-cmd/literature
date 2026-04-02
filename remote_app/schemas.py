@@ -16,6 +16,7 @@ class PaperOut(BaseModel):
     tags: list[str] = Field(default_factory=list)
     abstract_original: str = ""
     abstract_summary_zh: str = ""
+    list_summary_zh: str = ""
     filename: str = ""
     source_note: str = ""
     added_at: str = ""
@@ -23,6 +24,8 @@ class PaperOut(BaseModel):
     file_url: str = ""
     manual_edit: bool = False
     locked_fields: list[str] = Field(default_factory=list)
+    publish_status: str = "published"
+    analysis_confidence: float = 1.0
     search_score: float | None = None
     hit_reasons: list[str] = Field(default_factory=list)
     matched_fields: list[str] = Field(default_factory=list)
@@ -54,6 +57,7 @@ class PaperListResponse(BaseModel):
     category: str = ""
     sort: str = "updated_desc"
     q: str = ""
+    status: str = ""
 
 
 class CategoryItem(BaseModel):
@@ -86,3 +90,9 @@ class TaskOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AdminPaperActionOut(BaseModel):
+    ok: bool = True
+    id: str
+    publish_status: str

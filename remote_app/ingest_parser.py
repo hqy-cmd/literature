@@ -12,7 +12,7 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from .utils import ensure_list, now_text
+from .utils import build_list_summary, ensure_list, normalize_top_category, now_text
 
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".txt", ".md", ".html", ".htm", ".zip"}
@@ -198,13 +198,7 @@ def detect_collections(title: str, abstract_text: str, full_text: str) -> list[s
 
 
 def primary_from_collections(collections: list[str]) -> str:
-    if not collections:
-        return "其他"
-    preferred = ["灵巧手", "脑肿瘤", "肿瘤消融"]
-    for p in preferred:
-        if p in collections:
-            return p
-    return collections[0]
+    return normalize_top_category("", collections)
 
 
 def detect_tags(title: str, full_text: str, collections: list[str]) -> list[str]:
@@ -245,6 +239,33 @@ def summarize_zh(title: str, category: str, abstract_text: str) -> str:
     return f"这篇文献聚焦于“{category}”方向，标题为“{title}”。核心内容：{abs_text}"
 
 
+def summarize_list_zh(title: str, category: str, abstract_text: str) -> str:
+    return build_list_summary(title, category, abstract_text)
+
+
+def estimate_confidence(title: str, year: str, authors: list[str], collections: list[str], abstract_original: str) -> float:
+    score = 0.0
+    if title and len(title) >= 8:
+        score += 0.3
+    if year:
+        score += 0.15
+    if authors:
+        score += 0.2
+    if collections and collections != ["其他"]:
+        score += 0.2
+    if abstract_original and len(abstract_original) >= 120:
+        score += 0.15
+    return round(min(score, 1.0), 2)
+
+
+def decide_publish_status(confidence: float) -> str:
+    if confidence >= 0.75:
+        return "published"
+    if confidence >= 0.45:
+        return "pending_review"
+    return "pending_review"
+
+
 def build_paper_payload(filename: str, text: str) -> dict:
     abstract_original = extract_abstract(text)
     title = detect_title(text, filename)
@@ -254,6 +275,9 @@ def build_paper_payload(filename: str, text: str) -> dict:
     category = primary_from_collections(collections)
     tags = detect_tags(title, text, collections)
     summary = summarize_zh(title, category, abstract_original)
+    list_summary = summarize_list_zh(title, category, abstract_original)
+    confidence = estimate_confidence(title, year, authors, collections, abstract_original)
+    publish_status = decide_publish_status(confidence)
     file_id = f"{filename}-{int(time.time())}"
     return {
         "id": file_id,
@@ -265,9 +289,12 @@ def build_paper_payload(filename: str, text: str) -> dict:
         "tags": tags,
         "abstract_original": abstract_original,
         "abstract_summary_zh": summary,
+        "list_summary_zh": list_summary,
         "filename": filename,
         "source_note": "远端上传自动解析",
         "added_at": now_text(),
+        "analysis_confidence": confidence,
+        "publish_status": publish_status,
     }
 
 
@@ -283,4 +310,3 @@ def persist_uploaded_file(src: Path, dest_dir: Path) -> tuple[Path, str]:
     shutil.move(str(src), str(candidate))
     relative = f"files/{candidate.name}"
     return candidate, relative
-

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>AI 文献库管理台</title>
+  <title>Agent文献库管理台</title>
   <style>
     :root {
       --bg: #f3f6fb;
@@ -122,8 +122,8 @@
 <body>
   <div class="shell">
     <aside class="panel">
-      <h1>管理台</h1>
-      <div class="hint">该页面用于远端上传、URL 解析、任务跟踪、元数据编辑。建议通过 SSH 隧道访问。</div>
+      <h1>Agent文献库管理台</h1>
+      <div class="hint">上传、待审、发布与元数据编辑</div>
 
       <div class="row">
         <label>Admin Token（必填）</label>
@@ -149,6 +149,13 @@
           <button id="refreshTaskBtn" class="btn ghost">刷新任务</button>
         </div>
         <div id="taskList"></div>
+      </div>
+      <div class="row">
+        <div class="result-head">
+          <strong>待审文献</strong>
+          <button id="refreshPendingBtn" class="btn ghost">刷新待审</button>
+        </div>
+        <div id="pendingList"></div>
       </div>
       <div id="leftState" class="state">请先填写 Admin Token。</div>
     </aside>
@@ -200,7 +207,9 @@
       urlInput: document.getElementById('urlInput'),
       urlBtn: document.getElementById('urlBtn'),
       refreshTaskBtn: document.getElementById('refreshTaskBtn'),
+      refreshPendingBtn: document.getElementById('refreshPendingBtn'),
       taskList: document.getElementById('taskList'),
+      pendingList: document.getElementById('pendingList'),
       leftState: document.getElementById('leftState'),
       aiStatus: document.getElementById('aiStatus'),
       queryInput: document.getElementById('queryInput'),
@@ -289,7 +298,7 @@
           <p>${safe(item.abstract_summary_zh, '未生成摘要')}</p>
           <div class="actions">
             <button class="btn ghost" data-edit-id="${safe(item.id)}">编辑</button>
-            ${(item.file_url || item.file_path) ? `<a class="btn ghost" href="${encodeURI(item.file_url || item.file_path)}" target="_self">打开原文</a>` : ''}
+            ${(item.file_url || item.file_path) ? `<a class="btn ghost" href="${encodeURI((item.file_url || item.file_path).startsWith('/') ? (item.file_url || item.file_path) : '/' + (item.file_url || item.file_path))}" target="_self">打开原文</a>` : ''}
           </div>
         </article>
       `).join('');
@@ -376,6 +385,60 @@
       }
     }
 
+    async function refreshPending() {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch('/api/admin/papers?status=pending_review&page=1&page_size=30', { headers: headers(false) });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'pending_list_failed');
+        const items = data.items || [];
+        el.pendingList.innerHTML = items.map(item => `
+          <div class="task">
+            <div><strong>${safe(item.title, safe(item.filename, '未命名文献'))}</strong></div>
+            <div>ID: ${safe(item.id)} | 置信度: ${safe(item.analysis_confidence, '-')}</div>
+            <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn ghost" data-publish-id="${safe(item.id)}">发布</button>
+              <button class="btn ghost" data-reject-id="${safe(item.id)}">退回</button>
+            </div>
+          </div>
+        `).join('') || '<div class="task">暂无待审文献</div>';
+      } catch (err) {
+        el.pendingList.innerHTML = `<div class="task">待审获取失败：${err.message}</div>`;
+      }
+    }
+
+    async function publishPaper(id) {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/publish`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'publish_failed');
+        setLeftState(`已发布：${id}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`发布失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function rejectPaper(id) {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/reject`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'reject_failed');
+        setLeftState(`已退回：${id}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`退回失败：${err.message}`, 'warn');
+      }
+    }
+
     async function saveEdit() {
       if (!ensureToken()) return;
       if (!state.currentEditId) return;
@@ -417,6 +480,7 @@
     el.uploadBtn.addEventListener('click', uploadFile);
     el.urlBtn.addEventListener('click', parseUrl);
     el.refreshTaskBtn.addEventListener('click', refreshTasks);
+    el.refreshPendingBtn.addEventListener('click', refreshPending);
     el.resultList.addEventListener('click', e => {
       const target = e.target.closest('[data-edit-id]');
       if (!target) return;
@@ -426,6 +490,17 @@
     el.closeDrawerBtn.addEventListener('click', closeEditDrawer);
     el.cancelEditBtn.addEventListener('click', closeEditDrawer);
     el.saveEditBtn.addEventListener('click', saveEdit);
+    el.pendingList.addEventListener('click', e => {
+      const publishBtn = e.target.closest('[data-publish-id]');
+      if (publishBtn) {
+        publishPaper(publishBtn.dataset.publishId);
+        return;
+      }
+      const rejectBtn = e.target.closest('[data-reject-id]');
+      if (rejectBtn) {
+        rejectPaper(rejectBtn.dataset.rejectId);
+      }
+    });
 
     async function loadAiStatus() {
       try {
@@ -444,6 +519,7 @@
     el.adminToken.addEventListener('change', () => {
       if ((el.adminToken.value || '').trim()) {
         refreshTasks();
+        refreshPending();
       }
     });
     loadAiStatus();

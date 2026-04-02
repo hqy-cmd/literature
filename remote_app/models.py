@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -25,6 +25,7 @@ class Paper(Base):
     tags: Mapped[list] = mapped_column(JSON, default=list)
     abstract_original: Mapped[str] = mapped_column(Text, default="")
     abstract_summary_zh: Mapped[str] = mapped_column(Text, default="")
+    list_summary_zh: Mapped[str] = mapped_column(Text, default="")
     filename: Mapped[str] = mapped_column(Text, default="")
     source_note: Mapped[str] = mapped_column(Text, default="")
     added_at: Mapped[str] = mapped_column(String(64), default="")
@@ -34,6 +35,8 @@ class Paper(Base):
     locked_fields: Mapped[list] = mapped_column(JSON, default=list)
     search_text: Mapped[str] = mapped_column(Text, default="")
     token_vector: Mapped[list] = mapped_column(JSON, default=list)
+    publish_status: Mapped[str] = mapped_column(String(32), default="published", index=True)
+    analysis_confidence: Mapped[float] = mapped_column(Float, default=1.0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 

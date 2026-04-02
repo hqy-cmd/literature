@@ -43,6 +43,7 @@ docker compose exec api python scripts/migrate_papers_to_db.py
   - `GET /api/papers?page=1&page_size=24&category=&sort=updated_desc&q=`
   - `GET /api/search?q=...`
   - `GET /api/papers/{id}`
+  - `GET /files/<filename>`（原文静态访问）
 
 管理能力为 Token 保护（必须带 `X-Admin-Token`）：
 
@@ -52,6 +53,9 @@ docker compose exec api python scripts/migrate_papers_to_db.py
   - `POST /api/ingest/url`
   - `GET /api/tasks`
   - `GET /api/tasks/{id}`
+  - `GET /api/admin/papers?status=pending_review`
+  - `POST /api/admin/papers/{id}/publish`
+  - `POST /api/admin/papers/{id}/reject`
   - `POST /api/papers/{id}/update`
 
 `API_ADMIN_TOKEN` 未配置时，管理接口会返回 `500 admin_token_not_configured`。
@@ -69,6 +73,9 @@ docker compose exec api python scripts/migrate_papers_to_db.py
 - 文件上传支持：`PDF / DOCX / TXT / MD / HTML / ZIP`
 - URL 解析：抓取网页正文并入库
 - 异步任务状态：`queued / running / success / failed`
+- 混合发布策略：
+  - `analysis_confidence >= 0.75`：自动发布（`published`）
+  - `< 0.75`：进入待审（`pending_review`）
 
 ## 6. SSH 隧道示例（管理台）
 

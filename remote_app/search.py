@@ -135,7 +135,7 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
         }
 
     terms = rewrite_query(normalized)
-    candidates = db.query(Paper).all()
+    candidates = db.query(Paper).filter(Paper.publish_status == "published").all()
     ranked: list[dict] = []
 
     for paper in candidates:

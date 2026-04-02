@@ -8,6 +8,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .config import settings
@@ -15,6 +16,7 @@ from .database import Base, engine, get_db
 from .models import IngestTask, Paper
 from .queue import queue_client
 from .schemas import (
+    AdminPaperActionOut,
     CategoryListResponse,
     IngestUrlIn,
     PaperListResponse,
@@ -30,6 +32,7 @@ from .services import (
     list_categories,
     list_papers,
     paper_to_dict,
+    set_publish_status,
     task_to_dict,
     update_paper,
 )
@@ -50,6 +53,13 @@ app.add_middleware(
 def startup_event() -> None:
     settings.ensure_dirs()
     Base.metadata.create_all(bind=engine)
+    # Backward-compatible online schema patch for existing PostgreSQL instances.
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS list_summary_zh TEXT DEFAULT ''"))
+        conn.execute(
+            text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS publish_status VARCHAR(32) DEFAULT 'published'")
+        )
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_confidence DOUBLE PRECISION DEFAULT 1.0"))
 
 
 ui_dir = (Path(__file__).resolve().parent.parent / "remote-ui").resolve()
@@ -100,7 +110,7 @@ def api_search(
 
 @app.get("/api/categories", response_model=CategoryListResponse)
 def api_categories(db: Session = Depends(get_db)) -> CategoryListResponse:
-    items = list_categories(db)
+    items = list_categories(db, status="published")
     return CategoryListResponse(ok=True, items=items, total_categories=len(items))
 
 
@@ -120,6 +130,7 @@ def api_papers(
         category=category,
         sort=sort,
         q=q,
+        status="published",
     )
     payload["items"] = [PaperOut(**x) for x in payload["items"]]
     return PaperListResponse(**payload)
@@ -130,7 +141,57 @@ def api_paper_detail(paper_id: str, db: Session = Depends(get_db)) -> PaperOut:
     paper = db.query(Paper).filter(Paper.id == paper_id).first()
     if not paper:
         raise HTTPException(status_code=404, detail="paper_not_found")
+    if (paper.publish_status or "published") != "published":
+        raise HTTPException(status_code=404, detail="paper_not_found")
     return PaperOut(**paper_to_dict(paper))
+
+
+@app.get("/api/admin/papers", response_model=PaperListResponse)
+def api_admin_papers(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=24, ge=1, le=100),
+    category: str = Query(default=""),
+    sort: str = Query(default="updated_desc"),
+    q: str = Query(default=""),
+    status: str = Query(default="pending_review"),
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> PaperListResponse:
+    payload = list_papers(
+        db,
+        page=page,
+        page_size=page_size,
+        category=category,
+        sort=sort,
+        q=q,
+        status=status,
+    )
+    payload["items"] = [PaperOut(**x) for x in payload["items"]]
+    return PaperListResponse(**payload)
+
+
+@app.post("/api/admin/papers/{paper_id}/publish", response_model=AdminPaperActionOut)
+def api_admin_publish_paper(
+    paper_id: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperActionOut:
+    ok, result = set_publish_status(db, paper_id, "published")
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperActionOut(**result)
+
+
+@app.post("/api/admin/papers/{paper_id}/reject", response_model=AdminPaperActionOut)
+def api_admin_reject_paper(
+    paper_id: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperActionOut:
+    ok, result = set_publish_status(db, paper_id, "rejected")
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperActionOut(**result)
 
 
 @app.post("/api/papers/{paper_id}/update")

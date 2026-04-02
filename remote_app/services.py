@@ -17,7 +17,15 @@ from .ingest_parser import (
     persist_uploaded_file,
 )
 from .models import IngestTask, Paper, PaperChunk, Source
-from .utils import chunk_text, ensure_list, hash_vector, normalize_top_category, now_text, tokenize
+from .utils import (
+    build_list_summary,
+    chunk_text,
+    ensure_list,
+    hash_vector,
+    normalize_top_category,
+    now_text,
+    tokenize,
+)
 
 
 EDITABLE_FIELDS = {
@@ -28,10 +36,12 @@ EDITABLE_FIELDS = {
     "collections",
     "tags",
     "abstract_summary_zh",
+    "list_summary_zh",
     "source_note",
 }
 
 ARRAY_FIELDS = {"authors", "collections", "tags"}
+PUBLISH_STATUSES = {"published", "pending_review", "rejected"}
 
 
 def build_search_text(payload: dict) -> str:
@@ -44,6 +54,7 @@ def build_search_text(payload: dict) -> str:
         " ".join(payload.get("tags") or []),
         payload.get("abstract_original", ""),
         payload.get("abstract_summary_zh", ""),
+        payload.get("list_summary_zh", ""),
         payload.get("filename", ""),
         payload.get("source_note", ""),
     ]
@@ -58,6 +69,17 @@ def upsert_paper(db: Session, payload: dict) -> Paper:
     for key, value in payload.items():
         if hasattr(paper, key):
             setattr(paper, key, value)
+    if not (paper.list_summary_zh or "").strip():
+        paper.list_summary_zh = build_list_summary(
+            paper.title or "",
+            normalize_top_category(paper.category, paper.collections or []),
+            paper.abstract_summary_zh or paper.abstract_original or "",
+        )
+    status = str(getattr(paper, "publish_status", "") or "published").strip()
+    if status not in PUBLISH_STATUSES:
+        paper.publish_status = "published"
+    if getattr(paper, "analysis_confidence", None) is None:
+        paper.analysis_confidence = 1.0
     paper.search_text = build_search_text(payload)
     paper.token_vector = hash_vector(tokenize(paper.search_text))
     paper.updated_at = datetime.utcnow()
@@ -114,6 +136,7 @@ def update_paper(db: Session, paper_id: str, updates: dict) -> tuple[bool, dict]
         "tags": paper.tags or [],
         "abstract_original": paper.abstract_original,
         "abstract_summary_zh": paper.abstract_summary_zh,
+        "list_summary_zh": paper.list_summary_zh,
         "filename": paper.filename,
         "source_note": paper.source_note,
     }
@@ -280,6 +303,7 @@ def paper_to_dict(paper: Paper) -> dict:
         "tags": paper.tags or [],
         "abstract_original": paper.abstract_original or "",
         "abstract_summary_zh": paper.abstract_summary_zh or "",
+        "list_summary_zh": paper.list_summary_zh or "",
         "filename": paper.filename or "",
         "source_note": paper.source_note or "",
         "added_at": paper.added_at or "",
@@ -287,6 +311,8 @@ def paper_to_dict(paper: Paper) -> dict:
         "file_url": paper.file_url or "",
         "manual_edit": bool(paper.manual_edit),
         "locked_fields": paper.locked_fields or [],
+        "publish_status": paper.publish_status or "published",
+        "analysis_confidence": float(paper.analysis_confidence or 0.0),
     }
 
 
@@ -306,10 +332,12 @@ def task_to_dict(task: IngestTask) -> dict:
     }
 
 
-def list_categories(db: Session) -> list[dict]:
+def list_categories(db: Session, status: str = "published") -> list[dict]:
     papers = db.query(Paper).all()
     counter: dict[str, int] = {}
     for paper in papers:
+        if status and (paper.publish_status or "published") != status:
+            continue
         top = normalize_top_category(paper.category, paper.collections or [])
         counter[top] = counter.get(top, 0) + 1
     items = [{"name": k, "count": v} for k, v in counter.items() if k]
@@ -324,6 +352,7 @@ def list_papers(
     category: str = "",
     sort: str = "updated_desc",
     q: str = "",
+    status: str = "published",
 ) -> dict:
     papers = db.query(Paper).all()
     cat = (category or "").strip().lower()
@@ -331,6 +360,8 @@ def list_papers(
 
     filtered: list[Paper] = []
     for paper in papers:
+        if status and (paper.publish_status or "published") != status:
+            continue
         top_category = normalize_top_category(paper.category, paper.collections or [])
         if cat:
             if cat != top_category.lower():
@@ -343,6 +374,7 @@ def list_papers(
                     top_category,
                     " ".join(paper.collections or []),
                     " ".join(paper.tags or []),
+                    paper.list_summary_zh or "",
                     paper.abstract_summary_zh or "",
                     paper.filename or "",
                 ]
@@ -379,7 +411,21 @@ def list_papers(
         "category": category or "",
         "sort": sort,
         "q": q or "",
+        "status": status or "",
     }
+
+
+def set_publish_status(db: Session, paper_id: str, status: str) -> tuple[bool, dict]:
+    next_status = (status or "").strip().lower()
+    if next_status not in PUBLISH_STATUSES:
+        return False, {"ok": False, "error": "invalid_status", "status": status}
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+    if not paper:
+        return False, {"ok": False, "error": "paper_not_found", "id": paper_id}
+    paper.publish_status = next_status
+    paper.updated_at = datetime.utcnow()
+    db.commit()
+    return True, {"ok": True, "id": paper_id, "publish_status": next_status}
 
 
 def dump_result_to_json(task: IngestTask) -> str:

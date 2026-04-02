@@ -14,6 +14,7 @@ from remote_app.config import settings  # noqa: E402
 from remote_app.database import Base, SessionLocal, engine  # noqa: E402
 from remote_app.models import Paper  # noqa: E402
 from remote_app.services import upsert_paper  # noqa: E402
+from remote_app.utils import build_list_summary, normalize_top_category  # noqa: E402
 
 
 PAPERS_JSON = BASE_DIR / "literature-library" / "papers.json"
@@ -47,6 +48,7 @@ def main() -> None:
                 "tags": item.get("tags") or [],
                 "abstract_original": item.get("abstract_original", ""),
                 "abstract_summary_zh": item.get("abstract_summary_zh", ""),
+                "list_summary_zh": item.get("list_summary_zh", ""),
                 "filename": item.get("filename", ""),
                 "source_note": item.get("source_note", ""),
                 "added_at": item.get("added_at", ""),
@@ -54,7 +56,15 @@ def main() -> None:
                 "file_url": item.get("file_url", ""),
                 "manual_edit": bool(item.get("manual_edit", False)),
                 "locked_fields": item.get("locked_fields") or [],
+                "publish_status": item.get("publish_status", "published"),
+                "analysis_confidence": float(item.get("analysis_confidence", 1.0) or 1.0),
             }
+            if not str(payload["list_summary_zh"]).strip():
+                payload["list_summary_zh"] = build_list_summary(
+                    payload["title"],
+                    normalize_top_category(payload["category"], payload["collections"]),
+                    payload["abstract_summary_zh"] or payload["abstract_original"],
+                )
             upsert_paper(db, payload)
             if exists:
                 updated += 1
@@ -74,4 +84,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

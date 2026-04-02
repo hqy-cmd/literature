@@ -2,6 +2,11 @@
   root * /srv/web
   encode zstd gzip
 
+  handle_path /files/* {
+    root * /srv/files
+    file_server
+  }
+
   @api path /api/*
   reverse_proxy @api api:8080
 

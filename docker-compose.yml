@@ -73,6 +73,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./remote-ui:/srv/web:ro
+      - ./literature-library/files:/srv/files:ro
       - caddy_data:/data
       - caddy_config:/config
 
