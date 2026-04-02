@@ -497,7 +497,9 @@
       state.selectedId = paper.id;
       const reasons = (paper.hit_reasons || []).map(x => `<div>${safe(x)}</div>`).join('');
       const rawHref = safe(paper.file_url || paper.file_path, '');
-      const href = rawHref.startsWith('/') ? rawHref : `/${rawHref}`;
+      const href = /^https?:\/\//i.test(rawHref)
+        ? rawHref
+        : (rawHref.startsWith('/') ? rawHref : `/${rawHref}`);
       el.detailBody.innerHTML = `
         <h2 class="detail-title">${safe(paper.title, safe(paper.filename, '未命名文献'))}</h2>
         <div class="meta-grid">
@@ -547,7 +549,7 @@
       if (!state.papers.find(x => x.id === state.selectedId)) {
         state.selectedId = state.papers[0] ? state.papers[0].id : '';
       }
-      setSummary(`当前分类：${state.selectedCategory || '全部文献'} · 排序：${state.sort}`);
+      setSummary(`当前分类：${state.selectedCategory || '全部文献'} · 共 ${state.total} 篇`);
       el.modeTag.textContent = '浏览';
       setState(`已加载 ${state.total} 篇文献`, 'ok');
       renderCategories();

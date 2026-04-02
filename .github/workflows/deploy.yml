@@ -28,14 +28,12 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
-          PROD_ENV_FILE: ${{ secrets.PROD_ENV_FILE }}
         run: |
           [ -n "$VPS_HOST" ] || (echo "Missing required secret: VPS_HOST" && exit 1)
           [ -n "$VPS_PORT" ] || (echo "Missing required secret: VPS_PORT" && exit 1)
           [ -n "$VPS_USER" ] || (echo "Missing required secret: VPS_USER" && exit 1)
           [ -n "$VPS_SSH_KEY" ] || (echo "Missing required secret: VPS_SSH_KEY" && exit 1)
           [ -n "$VPS_PATH" ] || (echo "Missing required secret: VPS_PATH" && exit 1)
-          [ -n "$PROD_ENV_FILE" ] || (echo "Missing required secret: PROD_ENV_FILE" && exit 1)
 
       - name: Checkout target ref
         uses: actions/checkout@v5
@@ -55,18 +53,28 @@ jobs:
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude "remote-data/" \
+            --exclude "literature-library/files/" \
             --exclude "__pycache__/" \
+            --exclude ".env" \
             -e "ssh -p ${{ secrets.VPS_PORT }}" \
             ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
 
-      - name: Write production env and deploy
+      - name: Deploy without overriding existing env
         run: |
           ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" <<'EOF'
           set -euo pipefail
           mkdir -p "${{ secrets.VPS_PATH }}"
-          cat > "${{ secrets.VPS_PATH }}/.env" <<'ENVEOF'
-          ${{ secrets.PROD_ENV_FILE }}
-          ENVEOF
+          if [ ! -f "${{ secrets.VPS_PATH }}/.env" ]; then
+            if [ -z "${{ secrets.PROD_ENV_FILE }}" ]; then
+              echo ".env not found on VPS and PROD_ENV_FILE secret is empty"
+              exit 1
+            fi
+            cat > "${{ secrets.VPS_PATH }}/.env" <<'ENVEOF'
+${{ secrets.PROD_ENV_FILE }}
+ENVEOF
+          else
+            echo "Keep existing .env on VPS"
+          fi
           cd "${{ secrets.VPS_PATH }}"
           docker compose up -d --build
           docker compose exec -T api python scripts/migrate_papers_to_db.py

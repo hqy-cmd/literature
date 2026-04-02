@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 from datetime import datetime
+from pathlib import Path
 
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z][a-zA-Z0-9\-]{1,}|[\u4e00-\u9fff]{2,}")
@@ -152,3 +153,31 @@ def normalize_top_category(category: str | None, collections: list[str] | None =
         if mapped:
             return mapped
     return "其他"
+
+
+def normalize_file_url(file_url: str | None, file_path: str | None = None, filename: str | None = None) -> str:
+    for raw in (file_url, file_path):
+        value = (raw or "").strip()
+        if not value:
+            continue
+        if re.match(r"^https?://", value, re.I):
+            return value
+        norm = value.replace("\\", "/")
+        if norm.startswith("/files/"):
+            return norm
+        if norm.startswith("files/"):
+            return f"/{norm}"
+        if "/files/" in norm:
+            tail = norm.split("/files/", 1)[1].lstrip("/")
+            if tail:
+                return f"/files/{tail}"
+        if norm.startswith("/"):
+            return norm
+        if "/" not in norm:
+            return f"/files/{norm}"
+        return f"/{norm.lstrip('/')}"
+
+    fallback = (filename or "").strip()
+    if fallback:
+        return f"/files/{Path(fallback).name}"
+    return ""

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from . import llm
 from .models import Paper
-from .utils import cosine_sim, hash_vector, normalize_text, normalize_top_category, tokenize
+from .utils import cosine_sim, hash_vector, normalize_file_url, normalize_text, normalize_top_category, tokenize
 
 
 REWRITE_MAP = [
@@ -140,6 +140,7 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
 
     for paper in candidates:
         top_category = normalize_top_category(paper.category, paper.collections or [])
+        file_url = normalize_file_url(paper.file_url, paper.file_path, paper.filename)
         fields = _fields_text(paper)
         lexical_score, reasons, matched_fields = _lexical_score(terms, fields)
         semantic_score = _semantic_score(terms, paper)
@@ -166,7 +167,7 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
                 "source_note": paper.source_note or "",
                 "added_at": paper.added_at or "",
                 "file_path": paper.file_path or "",
-                "file_url": paper.file_url or "",
+                "file_url": file_url,
                 "manual_edit": bool(paper.manual_edit),
                 "locked_fields": paper.locked_fields or [],
                 "search_score": round(score, 4),

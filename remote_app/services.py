@@ -22,6 +22,7 @@ from .utils import (
     chunk_text,
     ensure_list,
     hash_vector,
+    normalize_file_url,
     normalize_top_category,
     now_text,
     tokenize,
@@ -293,6 +294,7 @@ def reformat_url_title(title: str, url: str) -> str:
 
 def paper_to_dict(paper: Paper) -> dict:
     top_category = normalize_top_category(paper.category, paper.collections or [])
+    file_url = normalize_file_url(paper.file_url, paper.file_path, paper.filename)
     return {
         "id": paper.id,
         "title": paper.title or "",
@@ -308,7 +310,7 @@ def paper_to_dict(paper: Paper) -> dict:
         "source_note": paper.source_note or "",
         "added_at": paper.added_at or "",
         "file_path": paper.file_path or "",
-        "file_url": paper.file_url or "",
+        "file_url": file_url,
         "manual_edit": bool(paper.manual_edit),
         "locked_fields": paper.locked_fields or [],
         "publish_status": paper.publish_status or "published",
