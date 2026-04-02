@@ -167,7 +167,8 @@ def extract_ingest_with_llm(filename: str, text: str) -> dict[str, Any]:
         "JSON 字段必须包含："
         "title(string), authors(array[string]), year(string), "
         "abstract_summary_zh(string), list_summary_zh(string,最多两句), "
-        "top_category(string,只能是 灵巧手/脑肿瘤/肿瘤消融/其他), "
+        "top_category(string，优先使用 灵巧手/脑肿瘤/肿瘤消融/其他；若不适配可给简短新类名), "
+        "sub_categories(array[string], 可选), "
         "tags(array[string]), evidence(array[string])。"
         "禁止输出额外解释文本。"
     )
@@ -188,9 +189,8 @@ def extract_ingest_with_llm(filename: str, text: str) -> dict[str, Any]:
     if not value:
         return {}
 
-    top = _as_str(value.get("top_category"), 32)
-    if top not in ALLOWED_TOP_CATEGORIES:
-        top = "其他"
+    raw_top = _as_str(value.get("top_category"), 32)
+    top = raw_top if raw_top in ALLOWED_TOP_CATEGORIES else "其他"
 
     return {
         "title": _as_str(value.get("title"), 260),
@@ -199,6 +199,8 @@ def extract_ingest_with_llm(filename: str, text: str) -> dict[str, Any]:
         "abstract_summary_zh": _as_str(value.get("abstract_summary_zh"), 2200),
         "list_summary_zh": _as_str(value.get("list_summary_zh"), 260),
         "top_category": top,
+        "top_category_raw": raw_top,
+        "sub_categories": _as_list(value.get("sub_categories"), item_limit=8, text_limit=30),
         "tags": _as_list(value.get("tags"), item_limit=24, text_limit=60),
         "evidence": _as_list(value.get("evidence"), item_limit=12, text_limit=120),
     }

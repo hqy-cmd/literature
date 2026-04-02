@@ -58,6 +58,7 @@ class PaperListResponse(BaseModel):
     page_size: int
     total_pages: int
     category: str = ""
+    subcategory: str = ""
     sort: str = "updated_desc"
     q: str = ""
     status: str = ""
@@ -72,6 +73,7 @@ class CategoryListResponse(BaseModel):
     ok: bool = True
     items: list[CategoryItem]
     total_categories: int
+    groups: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class IngestUrlIn(BaseModel):

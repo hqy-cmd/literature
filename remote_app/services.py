@@ -373,17 +373,50 @@ def list_categories(db: Session, status: str = "published") -> list[dict]:
     return items
 
 
+def list_category_groups(db: Session, status: str = "published") -> list[dict]:
+    papers = db.query(Paper).all()
+    top_counter: dict[str, int] = {}
+    sub_counter: dict[str, dict[str, int]] = {}
+    for paper in papers:
+        if status and (paper.publish_status or "published") != status:
+            continue
+        top = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
+        if not top:
+            top = "其他"
+        top_counter[top] = top_counter.get(top, 0) + 1
+        sub_counter.setdefault(top, {})
+        subs = [str(x).strip() for x in (paper.collections or []) if str(x).strip()]
+        if not subs:
+            subs = ["未细分"]
+        seen = set()
+        for sub in subs:
+            if sub in seen:
+                continue
+            seen.add(sub)
+            sub_counter[top][sub] = sub_counter[top].get(sub, 0) + 1
+
+    groups: list[dict] = []
+    for top, count in top_counter.items():
+        children = [{"name": k, "count": v} for k, v in sub_counter.get(top, {}).items()]
+        children.sort(key=lambda x: (-x["count"], x["name"]))
+        groups.append({"name": top, "count": count, "children": children})
+    groups.sort(key=lambda x: (-x["count"], x["name"]))
+    return groups
+
+
 def list_papers(
     db: Session,
     page: int = 1,
     page_size: int = 24,
     category: str = "",
+    subcategory: str = "",
     sort: str = "updated_desc",
     q: str = "",
     status: str = "published",
 ) -> dict:
     papers = db.query(Paper).all()
     cat = (category or "").strip().lower()
+    subcat = (subcategory or "").strip().lower()
     query = (q or "").strip().lower()
 
     filtered: list[Paper] = []
@@ -393,6 +426,11 @@ def list_papers(
         top_category = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
         if cat:
             if cat != top_category.lower():
+                continue
+        if subcat:
+            subs = [str(x).strip().lower() for x in (paper.collections or []) if str(x).strip()]
+            tag_subs = [str(x).strip().lower() for x in (paper.tags or []) if str(x).strip()]
+            if subcat not in subs and subcat not in tag_subs:
                 continue
         if query:
             hay = "\n".join(
@@ -437,6 +475,7 @@ def list_papers(
         "page_size": page_size,
         "total_pages": total_pages,
         "category": category or "",
+        "subcategory": subcategory or "",
         "sort": sort,
         "q": q or "",
         "status": status or "",

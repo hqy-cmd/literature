@@ -144,6 +144,18 @@
       max-height: calc(100vh - 180px);
       overflow: auto;
     }
+    .cat-group {
+      border: 1px solid #edf2f9;
+      border-radius: 10px;
+      background: #fff;
+      padding: 4px;
+    }
+    .cat-top-row {
+      display: grid;
+      grid-template-columns: 1fr 28px;
+      gap: 4px;
+      align-items: center;
+    }
     .category-item {
       border: 1px solid transparent;
       border-radius: 11px;
@@ -162,6 +174,40 @@
       background: var(--accent-soft);
       color: #0f4ca7;
       border-color: #c5daf8;
+    }
+    .category-toggle {
+      border: 1px solid #dce6f5;
+      border-radius: 8px;
+      background: #f7faff;
+      color: #47658f;
+      cursor: pointer;
+      height: 30px;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .category-children {
+      margin: 4px 2px 2px;
+      padding-left: 6px;
+      border-left: 2px solid #eef3fb;
+      display: grid;
+      gap: 3px;
+    }
+    .category-sub-item {
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: #fbfdff;
+      color: #3b5478;
+      cursor: pointer;
+      padding: 7px 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .category-sub-item.active {
+      background: #eef4ff;
+      border-color: #cadcf8;
+      color: #114a9b;
     }
     .workspace-head {
       padding: 12px 13px;
@@ -392,7 +438,10 @@
     const state = {
       mode: 'browse',
       categories: [],
+      categoryGroups: [],
       selectedCategory: '',
+      selectedSubcategory: '',
+      expandedCategories: {},
       page: 1,
       pageSize: 24,
       total: 0,
@@ -450,16 +499,34 @@
 
     function renderCategories() {
       const allBtn = `
-        <button class="category-item ${state.selectedCategory === '' ? 'active' : ''}" data-cat="">
+        <button class="category-item ${state.selectedCategory === '' && state.selectedSubcategory === '' ? 'active' : ''}" data-cat-all="1">
           <span>全部文献</span><span>${state.allTotal || state.total}</span>
         </button>`;
-      const items = state.categories.map(item => `
-        <button class="category-item ${state.selectedCategory === item.name ? 'active' : ''}" data-cat="${item.name}">
-          <span>${item.name}</span><span>${item.count}</span>
-        </button>
-      `).join('');
-      el.categoryCount.textContent = `${state.categories.length} 类`;
-      el.categoryList.innerHTML = allBtn + items;
+      const groups = state.categoryGroups.map(group => {
+        const topActive = state.selectedCategory === group.name && !state.selectedSubcategory;
+        const expanded = !!state.expandedCategories[group.name];
+        const children = (group.children || []).map(child => {
+          const active = state.selectedCategory === group.name && state.selectedSubcategory === child.name;
+          return `
+            <button class="category-sub-item ${active ? 'active' : ''}" data-cat-top="${group.name}" data-cat-sub="${child.name}">
+              <span>${child.name}</span><span>${child.count}</span>
+            </button>
+          `;
+        }).join('');
+        return `
+          <div class="cat-group">
+            <div class="cat-top-row">
+              <button class="category-item ${topActive ? 'active' : ''}" data-cat-top="${group.name}">
+                <span>${group.name}</span><span>${group.count}</span>
+              </button>
+              <button class="category-toggle" data-cat-toggle="${group.name}">${expanded ? '▾' : '▸'}</button>
+            </div>
+            ${expanded ? `<div class="category-children">${children || '<div class="tiny">无细分类</div>'}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+      el.categoryCount.textContent = `${state.categoryGroups.length} 大类`;
+      el.categoryList.innerHTML = allBtn + groups;
     }
 
     function renderRows() {
@@ -525,6 +592,17 @@
       const data = await resp.json();
       if (!resp.ok || !data.ok) throw new Error(data.detail || 'categories_failed');
       state.categories = data.items || [];
+      const groups = data.groups || [];
+      if (groups.length) {
+        state.categoryGroups = groups;
+      } else {
+        state.categoryGroups = (data.items || []).map(item => ({ name: item.name, count: item.count, children: [] }));
+      }
+      for (const group of state.categoryGroups) {
+        if (state.expandedCategories[group.name] === undefined) {
+          state.expandedCategories[group.name] = false;
+        }
+      }
     }
 
     async function loadPapers() {
@@ -532,6 +610,7 @@
         page: String(state.page),
         page_size: String(state.pageSize),
         category: state.selectedCategory,
+        subcategory: state.selectedSubcategory,
         sort: state.sort,
         q: state.q,
       });
@@ -541,7 +620,7 @@
       state.mode = 'browse';
       state.papers = data.items || [];
       state.total = data.total || 0;
-      if (!state.selectedCategory && !state.q) {
+      if (!state.selectedCategory && !state.selectedSubcategory && !state.q) {
         state.allTotal = state.total;
       }
       state.page = data.page || 1;
@@ -549,7 +628,9 @@
       if (!state.papers.find(x => x.id === state.selectedId)) {
         state.selectedId = state.papers[0] ? state.papers[0].id : '';
       }
-      setSummary(`当前分类：${state.selectedCategory || '全部文献'} · 共 ${state.total} 篇`);
+      const catLabel = state.selectedCategory || '全部文献';
+      const subLabel = state.selectedSubcategory ? ` / ${state.selectedSubcategory}` : '';
+      setSummary(`当前分类：${catLabel}${subLabel} · 共 ${state.total} 篇`);
       el.modeTag.textContent = '浏览';
       setState(`已加载 ${state.total} 篇文献`, 'ok');
       renderCategories();
@@ -594,9 +675,43 @@
     }
 
     el.categoryList.addEventListener('click', async e => {
-      const target = e.target.closest('[data-cat]');
-      if (!target) return;
-      state.selectedCategory = target.dataset.cat || '';
+      const toggle = e.target.closest('[data-cat-toggle]');
+      if (toggle) {
+        const top = toggle.dataset.catToggle || '';
+        if (top) {
+          state.expandedCategories[top] = !state.expandedCategories[top];
+          renderCategories();
+        }
+        return;
+      }
+      const all = e.target.closest('[data-cat-all]');
+      if (all) {
+        state.selectedCategory = '';
+        state.selectedSubcategory = '';
+        state.page = 1;
+        try {
+          await loadPapers();
+        } catch (err) {
+          setState(`分类切换失败：${err.message}`, 'warn');
+        }
+        return;
+      }
+      const sub = e.target.closest('[data-cat-sub]');
+      if (sub) {
+        state.selectedCategory = sub.dataset.catTop || '';
+        state.selectedSubcategory = sub.dataset.catSub || '';
+        state.page = 1;
+        try {
+          await loadPapers();
+        } catch (err) {
+          setState(`分类切换失败：${err.message}`, 'warn');
+        }
+        return;
+      }
+      const top = e.target.closest('[data-cat-top]');
+      if (!top) return;
+      state.selectedCategory = top.dataset.catTop || '';
+      state.selectedSubcategory = '';
       state.page = 1;
       try {
         await loadPapers();

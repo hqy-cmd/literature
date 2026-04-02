@@ -31,6 +31,7 @@ from .search import search_papers
 from .security import require_admin_token
 from .services import (
     create_task,
+    list_category_groups,
     list_categories,
     list_papers,
     paper_to_dict,
@@ -124,7 +125,8 @@ def api_search(
 @app.get("/api/categories", response_model=CategoryListResponse)
 def api_categories(db: Session = Depends(get_db)) -> CategoryListResponse:
     items = list_categories(db, status="published")
-    return CategoryListResponse(ok=True, items=items, total_categories=len(items))
+    groups = list_category_groups(db, status="published")
+    return CategoryListResponse(ok=True, items=items, total_categories=len(items), groups=groups)
 
 
 @app.get("/api/papers", response_model=PaperListResponse)
@@ -132,6 +134,7 @@ def api_papers(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=24, ge=1, le=100),
     category: str = Query(default=""),
+    subcategory: str = Query(default=""),
     sort: str = Query(default="updated_desc"),
     q: str = Query(default=""),
     db: Session = Depends(get_db),
@@ -141,6 +144,7 @@ def api_papers(
         page=page,
         page_size=page_size,
         category=category,
+        subcategory=subcategory,
         sort=sort,
         q=q,
         status="published",
@@ -164,6 +168,7 @@ def api_admin_papers(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=24, ge=1, le=100),
     category: str = Query(default=""),
+    subcategory: str = Query(default=""),
     sort: str = Query(default="updated_desc"),
     q: str = Query(default=""),
     status: str = Query(default="pending_review"),
@@ -175,6 +180,7 @@ def api_admin_papers(
         page=page,
         page_size=page_size,
         category=category,
+        subcategory=subcategory,
         sort=sort,
         q=q,
         status=status,

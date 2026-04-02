@@ -245,6 +245,19 @@ def _sanitize_title(line: str) -> str:
     return value[:240]
 
 
+def _valid_custom_category(name: str) -> bool:
+    value = str(name or "").strip()
+    if not value:
+        return False
+    if len(value) < 2 or len(value) > 14:
+        return False
+    if re.search(r"[\d/\\|:;,.，。！？!?\[\]{}()<>]", value):
+        return False
+    if value in {"其他", "未分类"}:
+        return False
+    return bool(re.search(r"[A-Za-z\u4e00-\u9fff]", value))
+
+
 def detect_title(text: str, fallback: str) -> str:
     lines = [re.sub(r"\s+", " ", x.strip()) for x in (text or "").splitlines() if x.strip()]
     candidates: list[tuple[float, str]] = []
@@ -375,6 +388,20 @@ def detect_collections(title: str, abstract_text: str, category: str) -> list[st
         seen.add(item)
         dedup.append(item)
     return dedup
+
+
+def merge_subcategories(base: list[str], llm_subs: list[str]) -> list[str]:
+    merged: list[str] = []
+    seen = set()
+    for raw in (base or []) + (llm_subs or []):
+        value = str(raw or "").strip()
+        if not value or value in seen:
+            continue
+        if len(value) > 24:
+            continue
+        seen.add(value)
+        merged.append(value)
+    return merged[:12]
 
 
 def detect_tags(title: str, full_text: str, collections: list[str], llm_tags: list[str] | None = None) -> list[str]:
@@ -538,28 +565,39 @@ def build_paper_payload(filename: str, text: str) -> dict:
     year = llm_year if re.fullmatch(r"(19\d{2}|20\d{2})", llm_year) else local_year
     authors = ensure_list(llm_data.get("authors") or local_authors)
 
-    candidate_category = str(llm_data.get("top_category") or local_category).strip()
+    candidate_category = str(llm_data.get("top_category") or "").strip()
+    raw_category = str(llm_data.get("top_category_raw") or "").strip()
     if candidate_category not in TOP_LEVEL_CATEGORIES:
         candidate_category = local_category
     if candidate_category not in TOP_LEVEL_CATEGORIES:
         candidate_category = "其他"
     category = candidate_category
 
+    custom_top = ""
+    if raw_category and raw_category not in TOP_LEVEL_CATEGORIES and _valid_custom_category(raw_category):
+        custom_top = f"自定义:{raw_category}"
+
     collections = detect_collections(title, abstract_original, category)
+    collections = merge_subcategories(collections, ensure_list(llm_data.get("sub_categories")))
     llm_evidence = ensure_list(llm_data.get("evidence"))
     evidence = llm_evidence or local_evidence
     evidence = [x for x in evidence if x][:8]
 
     # Second-pass classification for "其他": ask LLM to force a top-level choice among 4 classes.
-    if category == "其他":
+    if category == "其他" and not custom_top:
         second = llm.classify_top_category_with_llm(title, abstract_original, clean_full_text)
         second_cat = str(second.get("top_category") or "").strip()
         second_evidence = ensure_list(second.get("evidence"))
         if second_cat in TOP_LEVEL_CATEGORIES and second_cat != "其他":
             category = second_cat
             collections = detect_collections(title, abstract_original, category)
+            collections = merge_subcategories(collections, ensure_list(llm_data.get("sub_categories")))
             if second_evidence:
                 evidence = second_evidence[:8]
+
+    final_category = custom_top or category
+    if custom_top:
+        evidence = (evidence + [f"LLM自定义大类: {raw_category}"])[:8]
 
     summary = str(llm_data.get("abstract_summary_zh") or local_summary).strip()
     if not summary:
@@ -575,7 +613,7 @@ def build_paper_payload(filename: str, text: str) -> dict:
         "title": title,
         "authors": authors,
         "year": year,
-        "category": category,
+        "category": final_category,
         "abstract_summary_zh": summary,
         "classification_evidence": evidence,
     }
@@ -590,7 +628,7 @@ def build_paper_payload(filename: str, text: str) -> dict:
         "title": title,
         "authors": authors,
         "year": year,
-        "category": category,
+        "category": final_category,
         "collections": collections or ["其他"],
         "tags": tags,
         "abstract_original": abstract_original,
