@@ -79,7 +79,13 @@ def health(db: Session = Depends(get_db)) -> dict:
         paper_count = db.query(Paper).count()
     except Exception:
         paper_count = -1
-    return {"ok": True, "paper_count": paper_count, "queue_key": settings.queue_key}
+    return {
+        "ok": True,
+        "paper_count": paper_count,
+        "queue_key": settings.queue_key,
+        "llm_enabled": settings.llm_enabled,
+        "llm_model": settings.llm_model or "",
+    }
 
 
 @app.get("/api/search", response_model=SearchResponse)

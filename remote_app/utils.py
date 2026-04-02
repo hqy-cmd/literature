@@ -28,6 +28,19 @@ STOP_WORDS = {
     "with",
 }
 
+TOP_LEVEL_CATEGORIES = {"灵巧手", "脑肿瘤", "肿瘤消融", "其他"}
+SUB_CATEGORY_TO_TOP = {
+    "机器人抓取": "灵巧手",
+    "视觉触觉融合": "灵巧手",
+    "多智能体强化学习": "灵巧手",
+    "脑组织": "脑肿瘤",
+    "电免疫治疗": "脑肿瘤",
+    "可注射水凝胶": "脑肿瘤",
+    "生物可吸收材料": "脑肿瘤",
+    "温度成像": "肿瘤消融",
+    "荧光纳米温度计": "肿瘤消融",
+}
+
 
 def now_text() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -80,3 +93,20 @@ def ensure_list(value) -> list[str]:
         return [x.strip() for x in re.split(r"[,\n]", value) if x.strip()]
     return [str(value).strip()] if str(value).strip() else []
 
+
+def normalize_top_category(category: str | None, collections: list[str] | None = None) -> str:
+    names: list[str] = []
+    if category:
+        names.append(str(category).strip())
+    for item in collections or []:
+        value = str(item).strip()
+        if value:
+            names.append(value)
+
+    for name in names:
+        if name in TOP_LEVEL_CATEGORIES:
+            return name
+        mapped = SUB_CATEGORY_TO_TOP.get(name)
+        if mapped:
+            return mapped
+    return "其他"

@@ -130,6 +130,10 @@
         <input id="adminToken" class="input" placeholder="所有管理接口都需要 X-Admin-Token" />
       </div>
       <div class="row">
+        <label>AI 状态</label>
+        <div id="aiStatus" class="state">检测中...</div>
+      </div>
+      <div class="row">
         <label>上传文献文件</label>
         <input id="uploadFile" class="file" type="file" />
         <button id="uploadBtn" class="btn">提交上传任务</button>
@@ -198,6 +202,7 @@
       refreshTaskBtn: document.getElementById('refreshTaskBtn'),
       taskList: document.getElementById('taskList'),
       leftState: document.getElementById('leftState'),
+      aiStatus: document.getElementById('aiStatus'),
       queryInput: document.getElementById('queryInput'),
       searchBtn: document.getElementById('searchBtn'),
       searchSummary: document.getElementById('searchSummary'),
@@ -422,11 +427,26 @@
     el.cancelEditBtn.addEventListener('click', closeEditDrawer);
     el.saveEditBtn.addEventListener('click', saveEdit);
 
+    async function loadAiStatus() {
+      try {
+        const resp = await fetch('/api/health');
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error('health_failed');
+        const model = data.llm_model ? ` (${data.llm_model})` : '';
+        el.aiStatus.textContent = data.llm_enabled ? `已开启${model}` : '未开启（本地检索模式）';
+        el.aiStatus.className = `state ${data.llm_enabled ? 'ok' : ''}`.trim();
+      } catch (err) {
+        el.aiStatus.textContent = `检测失败：${err.message}`;
+        el.aiStatus.className = 'state warn';
+      }
+    }
+
     el.adminToken.addEventListener('change', () => {
       if ((el.adminToken.value || '').trim()) {
         refreshTasks();
       }
     });
+    loadAiStatus();
   </script>
 </body>
 </html>

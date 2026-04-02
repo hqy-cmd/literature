@@ -17,7 +17,7 @@ from .ingest_parser import (
     persist_uploaded_file,
 )
 from .models import IngestTask, Paper, PaperChunk, Source
-from .utils import chunk_text, ensure_list, hash_vector, now_text, tokenize
+from .utils import chunk_text, ensure_list, hash_vector, normalize_top_category, now_text, tokenize
 
 
 EDITABLE_FIELDS = {
@@ -269,12 +269,13 @@ def reformat_url_title(title: str, url: str) -> str:
 
 
 def paper_to_dict(paper: Paper) -> dict:
+    top_category = normalize_top_category(paper.category, paper.collections or [])
     return {
         "id": paper.id,
         "title": paper.title or "",
         "authors": paper.authors or [],
         "year": paper.year or "",
-        "category": paper.category or "",
+        "category": top_category,
         "collections": paper.collections or [],
         "tags": paper.tags or [],
         "abstract_original": paper.abstract_original or "",
@@ -309,15 +310,8 @@ def list_categories(db: Session) -> list[dict]:
     papers = db.query(Paper).all()
     counter: dict[str, int] = {}
     for paper in papers:
-        names = set()
-        if paper.category:
-            names.add(str(paper.category).strip())
-        for col in paper.collections or []:
-            value = str(col).strip()
-            if value:
-                names.add(value)
-        for name in names:
-            counter[name] = counter.get(name, 0) + 1
+        top = normalize_top_category(paper.category, paper.collections or [])
+        counter[top] = counter.get(top, 0) + 1
     items = [{"name": k, "count": v} for k, v in counter.items() if k]
     items.sort(key=lambda x: (-x["count"], x["name"]))
     return items
@@ -337,17 +331,16 @@ def list_papers(
 
     filtered: list[Paper] = []
     for paper in papers:
+        top_category = normalize_top_category(paper.category, paper.collections or [])
         if cat:
-            names = {str(paper.category or "").strip().lower()}
-            names |= {str(x).strip().lower() for x in (paper.collections or []) if str(x).strip()}
-            if cat not in names:
+            if cat != top_category.lower():
                 continue
         if query:
             hay = "\n".join(
                 [
                     paper.title or "",
                     " ".join(paper.authors or []),
-                    paper.category or "",
+                    top_category,
                     " ".join(paper.collections or []),
                     " ".join(paper.tags or []),
                     paper.abstract_summary_zh or "",

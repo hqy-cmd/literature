@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from . import llm
 from .models import Paper
-from .utils import cosine_sim, hash_vector, normalize_text, tokenize
+from .utils import cosine_sim, hash_vector, normalize_text, normalize_top_category, tokenize
 
 
 REWRITE_MAP = [
@@ -51,10 +51,11 @@ def rewrite_query(query: str) -> list[str]:
 
 
 def _fields_text(paper: Paper) -> dict[str, str]:
+    top_category = normalize_top_category(paper.category, paper.collections or [])
     return {
         "title": normalize_text(paper.title),
         "authors": normalize_text(" ".join(paper.authors or [])),
-        "category": normalize_text(paper.category),
+        "category": normalize_text(top_category),
         "collections": normalize_text(" ".join(paper.collections or [])),
         "tags": normalize_text(" ".join(paper.tags or [])),
         "abstract": normalize_text(f"{paper.abstract_summary_zh} {paper.abstract_original}"),
@@ -138,6 +139,7 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
     ranked: list[dict] = []
 
     for paper in candidates:
+        top_category = normalize_top_category(paper.category, paper.collections or [])
         fields = _fields_text(paper)
         lexical_score, reasons, matched_fields = _lexical_score(terms, fields)
         semantic_score = _semantic_score(terms, paper)
@@ -155,7 +157,7 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
                 "title": paper.title,
                 "authors": paper.authors or [],
                 "year": paper.year or "",
-                "category": paper.category or "",
+                "category": top_category,
                 "collections": paper.collections or [],
                 "tags": paper.tags or [],
                 "abstract_original": paper.abstract_original or "",
@@ -182,4 +184,3 @@ def search_papers(db: Session, query: str, limit: int = 20) -> dict:
         "summary": summarize_results(query, ranked),
         "results": ranked,
     }
-
