@@ -61,20 +61,18 @@ jobs:
 
       - name: Deploy without overriding existing env
         run: |
-          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" <<'EOF'
-          set -euo pipefail
-          mkdir -p "${{ secrets.VPS_PATH }}"
-          if [ ! -f "${{ secrets.VPS_PATH }}/.env" ]; then
+          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "mkdir -p '${{ secrets.VPS_PATH }}'"
+          if ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "[ ! -f '${{ secrets.VPS_PATH }}/.env' ]"; then
             if [ -z "${{ secrets.PROD_ENV_FILE }}" ]; then
               echo ".env not found on VPS and PROD_ENV_FILE secret is empty"
               exit 1
             fi
-            cat > "${{ secrets.VPS_PATH }}/.env" <<'ENVEOF'
-${{ secrets.PROD_ENV_FILE }}
-ENVEOF
+            printf '%s\n' "${{ secrets.PROD_ENV_FILE }}" | ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" "cat > '${{ secrets.VPS_PATH }}/.env'"
           else
             echo "Keep existing .env on VPS"
           fi
+          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" <<'EOF'
+          set -euo pipefail
           cd "${{ secrets.VPS_PATH }}"
           docker compose up -d --build
           docker compose exec -T api python scripts/migrate_papers_to_db.py
