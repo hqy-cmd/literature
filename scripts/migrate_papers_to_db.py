@@ -14,7 +14,7 @@ from remote_app.config import settings  # noqa: E402
 from remote_app.database import Base, SessionLocal, engine  # noqa: E402
 from remote_app.models import Paper  # noqa: E402
 from remote_app.services import upsert_paper  # noqa: E402
-from remote_app.utils import build_list_summary, normalize_top_category  # noqa: E402
+from remote_app.utils import build_list_summary, resolve_category  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
 
@@ -81,7 +81,7 @@ def main() -> None:
             if not str(payload["list_summary_zh"]).strip():
                 payload["list_summary_zh"] = build_list_summary(
                     payload["title"],
-                    normalize_top_category(payload["category"], payload["collections"]),
+                    resolve_category(payload["category"], payload["collections"], bool(payload.get("manual_edit"))),
                     payload["abstract_summary_zh"] or payload["abstract_original"],
                 )
             upsert_paper(db, payload)

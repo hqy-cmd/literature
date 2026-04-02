@@ -187,7 +187,7 @@
     <div class="row"><label>标题</label><input id="e_title" class="input" /></div>
     <div class="two-col">
       <div class="row"><label>年份</label><input id="e_year" class="input" /></div>
-      <div class="row"><label>分类</label><input id="e_category" class="input" /></div>
+      <div class="row"><label>分类</label><input id="e_category" class="input" placeholder="可直接输入新类名（例如：视触觉）" /></div>
     </div>
     <div class="row"><label>作者（逗号分隔）</label><textarea id="e_authors" class="textarea"></textarea></div>
     <div class="row"><label>分类集合（逗号分隔）</label><textarea id="e_collections" class="textarea"></textarea></div>
@@ -314,6 +314,9 @@
           <p>${safe(item.abstract_summary_zh, '未生成摘要')}</p>
           <div class="actions">
             <button class="btn ghost" data-edit-id="${safe(item.id)}">编辑</button>
+            <button class="btn ghost" data-trash-id="${safe(item.id)}">移入回收站</button>
+            <button class="btn ghost" data-purge-id="${safe(item.id)}">彻底删除</button>
+            <button class="btn ghost" data-reanalyze-id="${safe(item.id)}">重审</button>
             ${href ? `<a class="btn ghost" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}
           </div>
         </article>
@@ -574,9 +577,25 @@
     el.reviewStatus.addEventListener('change', refreshPending);
     el.resultList.addEventListener('click', e => {
       const target = e.target.closest('[data-edit-id]');
-      if (!target) return;
-      const item = state.currentResults.find(x => x.id === target.dataset.editId);
-      if (item) openEditDrawer(item);
+      if (target) {
+        const item = state.currentResults.find(x => x.id === target.dataset.editId);
+        if (item) openEditDrawer(item);
+        return;
+      }
+      const trashBtn = e.target.closest('[data-trash-id]');
+      if (trashBtn) {
+        trashPaper(trashBtn.dataset.trashId);
+        return;
+      }
+      const purgeBtn = e.target.closest('[data-purge-id]');
+      if (purgeBtn) {
+        purgePaper(purgeBtn.dataset.purgeId);
+        return;
+      }
+      const reanalyzeBtn = e.target.closest('[data-reanalyze-id]');
+      if (reanalyzeBtn) {
+        reanalyzePaper(reanalyzeBtn.dataset.reanalyzeId);
+      }
     });
     el.closeDrawerBtn.addEventListener('click', closeEditDrawer);
     el.cancelEditBtn.addEventListener('click', closeEditDrawer);

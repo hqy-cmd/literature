@@ -155,6 +155,17 @@ def normalize_top_category(category: str | None, collections: list[str] | None =
     return "其他"
 
 
+def resolve_category(category: str | None, collections: list[str] | None = None, manual_edit: bool = False) -> str:
+    raw = str(category or "").strip()
+    if raw.startswith("自定义:"):
+        custom = raw.split(":", 1)[1].strip()
+        if custom:
+            return custom
+    if manual_edit and raw and raw not in TOP_LEVEL_CATEGORIES and raw not in SUB_CATEGORY_TO_TOP:
+        return raw
+    return normalize_top_category(raw, collections)
+
+
 def normalize_file_url(file_url: str | None, file_path: str | None = None, filename: str | None = None) -> str:
     for raw in (file_url, file_path):
         value = (raw or "").strip()

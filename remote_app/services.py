@@ -26,8 +26,8 @@ from .utils import (
     ensure_list,
     hash_vector,
     normalize_file_url,
-    normalize_top_category,
     now_text,
+    resolve_category,
     tokenize,
 )
 
@@ -76,7 +76,7 @@ def upsert_paper(db: Session, payload: dict) -> Paper:
     if not (paper.list_summary_zh or "").strip():
         paper.list_summary_zh = build_list_summary(
             paper.title or "",
-            normalize_top_category(paper.category, paper.collections or []),
+            resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit)),
             paper.abstract_summary_zh or paper.abstract_original or "",
         )
     status = str(getattr(paper, "publish_status", "") or "published").strip()
@@ -316,7 +316,7 @@ def reformat_url_title(title: str, url: str) -> str:
 
 
 def paper_to_dict(paper: Paper) -> dict:
-    top_category = normalize_top_category(paper.category, paper.collections or [])
+    top_category = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
     file_url = normalize_file_url(paper.file_url, paper.file_path, paper.filename)
     return {
         "id": paper.id,
@@ -366,7 +366,7 @@ def list_categories(db: Session, status: str = "published") -> list[dict]:
     for paper in papers:
         if status and (paper.publish_status or "published") != status:
             continue
-        top = normalize_top_category(paper.category, paper.collections or [])
+        top = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
         counter[top] = counter.get(top, 0) + 1
     items = [{"name": k, "count": v} for k, v in counter.items() if k]
     items.sort(key=lambda x: (-x["count"], x["name"]))
@@ -390,7 +390,7 @@ def list_papers(
     for paper in papers:
         if status and (paper.publish_status or "published") != status:
             continue
-        top_category = normalize_top_category(paper.category, paper.collections or [])
+        top_category = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
         if cat:
             if cat != top_category.lower():
                 continue
