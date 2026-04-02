@@ -15,6 +15,7 @@ from remote_app.database import Base, SessionLocal, engine  # noqa: E402
 from remote_app.models import Paper  # noqa: E402
 from remote_app.services import reanalyze_paper  # noqa: E402
 from sqlalchemy import text  # noqa: E402
+from remote_app.utils import resolve_category  # noqa: E402
 
 
 def ensure_online_columns() -> None:
@@ -32,6 +33,16 @@ def ensure_online_columns() -> None:
 
 
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Reanalyze existing papers")
+    parser.add_argument(
+        "--only-other",
+        action="store_true",
+        help="Only reanalyze papers currently categorized as 其他",
+    )
+    args = parser.parse_args()
+
     settings.ensure_dirs()
     Base.metadata.create_all(bind=engine)
     ensure_online_columns()
@@ -50,6 +61,10 @@ def main() -> None:
         papers = db.query(Paper).order_by(Paper.created_at.asc()).all()
         report["total"] = len(papers)
         for paper in papers:
+            if args.only_other:
+                top = resolve_category(paper.category, paper.collections or [], bool(paper.manual_edit))
+                if top != "其他":
+                    continue
             before_status = (paper.publish_status or "published").strip().lower()
             ok, result = reanalyze_paper(db, paper.id, settings.library_files_dir)
             if not ok:

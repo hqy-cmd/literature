@@ -550,6 +550,17 @@ def build_paper_payload(filename: str, text: str) -> dict:
     evidence = llm_evidence or local_evidence
     evidence = [x for x in evidence if x][:8]
 
+    # Second-pass classification for "其他": ask LLM to force a top-level choice among 4 classes.
+    if category == "其他":
+        second = llm.classify_top_category_with_llm(title, abstract_original, clean_full_text)
+        second_cat = str(second.get("top_category") or "").strip()
+        second_evidence = ensure_list(second.get("evidence"))
+        if second_cat in TOP_LEVEL_CATEGORIES and second_cat != "其他":
+            category = second_cat
+            collections = detect_collections(title, abstract_original, category)
+            if second_evidence:
+                evidence = second_evidence[:8]
+
     summary = str(llm_data.get("abstract_summary_zh") or local_summary).strip()
     if not summary:
         summary = local_summary

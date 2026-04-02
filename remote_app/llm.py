@@ -202,3 +202,34 @@ def extract_ingest_with_llm(filename: str, text: str) -> dict[str, Any]:
         "tags": _as_list(value.get("tags"), item_limit=24, text_limit=60),
         "evidence": _as_list(value.get("evidence"), item_limit=12, text_limit=120),
     }
+
+
+def classify_top_category_with_llm(title: str, abstract_text: str, full_text: str) -> dict[str, Any]:
+    prompt = (
+        "你是文献顶层分类器。必须在 灵巧手/脑肿瘤/肿瘤消融/其他 中选一个。"
+        "请仅返回 JSON 对象，字段: top_category(string), evidence(array[string],最多3条)。"
+    )
+    payload = {
+        "title": _as_str(title, 260),
+        "abstract_summary": _as_str(abstract_text, 2400),
+        "text_window": _as_str(full_text, 12000),
+    }
+    content = _chat_completion(
+        [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
+        temperature=0.0,
+    )
+    if not content:
+        return {}
+    value = _extract_json_payload(content)
+    if not value:
+        return {}
+    top = _as_str(value.get("top_category"), 32)
+    if top not in ALLOWED_TOP_CATEGORIES:
+        top = "其他"
+    return {
+        "top_category": top,
+        "evidence": _as_list(value.get("evidence"), item_limit=3, text_limit=80),
+    }
