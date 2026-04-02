@@ -26,6 +26,9 @@ class PaperOut(BaseModel):
     locked_fields: list[str] = Field(default_factory=list)
     publish_status: str = "published"
     analysis_confidence: float = 1.0
+    analysis_confidence_breakdown: dict[str, float] = Field(default_factory=dict)
+    analysis_warnings: list[str] = Field(default_factory=list)
+    classification_evidence: list[str] = Field(default_factory=list)
     search_score: float | None = None
     hit_reasons: list[str] = Field(default_factory=list)
     matched_fields: list[str] = Field(default_factory=list)
@@ -96,3 +99,20 @@ class AdminPaperActionOut(BaseModel):
     ok: bool = True
     id: str
     publish_status: str
+
+
+class AdminPaperPurgeOut(BaseModel):
+    ok: bool = True
+    id: str
+    purged: bool = True
+    file_deleted: bool = False
+    file_kept_reason: str = ""
+
+
+class AdminPaperReanalyzeOut(BaseModel):
+    ok: bool = True
+    id: str
+    publish_status: str
+    analysis_confidence: float
+    updated_fields: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)

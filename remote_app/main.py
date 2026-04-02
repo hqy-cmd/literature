@@ -17,6 +17,8 @@ from .models import IngestTask, Paper
 from .queue import queue_client
 from .schemas import (
     AdminPaperActionOut,
+    AdminPaperPurgeOut,
+    AdminPaperReanalyzeOut,
     CategoryListResponse,
     IngestUrlIn,
     PaperListResponse,
@@ -32,8 +34,12 @@ from .services import (
     list_categories,
     list_papers,
     paper_to_dict,
+    purge_paper,
+    reanalyze_paper,
+    restore_paper,
     set_publish_status,
     task_to_dict,
+    trash_paper,
     update_paper,
 )
 
@@ -60,6 +66,13 @@ def startup_event() -> None:
             text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS publish_status VARCHAR(32) DEFAULT 'published'")
         )
         conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_confidence DOUBLE PRECISION DEFAULT 1.0"))
+        conn.execute(
+            text(
+                "ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_confidence_breakdown JSON DEFAULT '{}'::json"
+            )
+        )
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_warnings JSON DEFAULT '[]'::json"))
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS classification_evidence JSON DEFAULT '[]'::json"))
 
 
 ui_dir = (Path(__file__).resolve().parent.parent / "remote-ui").resolve()
@@ -192,6 +205,55 @@ def api_admin_reject_paper(
     if not ok:
         raise HTTPException(status_code=400, detail=result)
     return AdminPaperActionOut(**result)
+
+
+@app.post("/api/admin/papers/{paper_id}/trash", response_model=AdminPaperActionOut)
+def api_admin_trash_paper(
+    paper_id: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperActionOut:
+    ok, result = trash_paper(db, paper_id)
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperActionOut(**result)
+
+
+@app.post("/api/admin/papers/{paper_id}/restore", response_model=AdminPaperActionOut)
+def api_admin_restore_paper(
+    paper_id: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperActionOut:
+    ok, result = restore_paper(db, paper_id)
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperActionOut(**result)
+
+
+@app.post("/api/admin/papers/{paper_id}/purge", response_model=AdminPaperPurgeOut)
+def api_admin_purge_paper(
+    paper_id: str,
+    delete_file: bool = Query(default=True),
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperPurgeOut:
+    ok, result = purge_paper(db, paper_id, settings.library_files_dir, delete_file=delete_file)
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperPurgeOut(**result)
+
+
+@app.post("/api/admin/papers/{paper_id}/reanalyze", response_model=AdminPaperReanalyzeOut)
+def api_admin_reanalyze_paper(
+    paper_id: str,
+    _: None = Depends(require_admin_token),
+    db: Session = Depends(get_db),
+) -> AdminPaperReanalyzeOut:
+    ok, result = reanalyze_paper(db, paper_id, settings.library_files_dir)
+    if not ok:
+        raise HTTPException(status_code=400, detail=result)
+    return AdminPaperReanalyzeOut(**result)
 
 
 @app.post("/api/papers/{paper_id}/update")

@@ -5,12 +5,15 @@ import math
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from .ingest_parser import (
     SUPPORTED_EXTENSIONS,
     build_paper_payload,
+    clean_text,
     extract_text_from_file,
     extract_texts_from_zip,
     fetch_url_text,
@@ -42,7 +45,7 @@ EDITABLE_FIELDS = {
 }
 
 ARRAY_FIELDS = {"authors", "collections", "tags"}
-PUBLISH_STATUSES = {"published", "pending_review", "rejected"}
+PUBLISH_STATUSES = {"published", "pending_review", "rejected", "trashed"}
 
 
 def build_search_text(payload: dict) -> str:
@@ -81,7 +84,27 @@ def upsert_paper(db: Session, payload: dict) -> Paper:
         paper.publish_status = "published"
     if getattr(paper, "analysis_confidence", None) is None:
         paper.analysis_confidence = 1.0
-    paper.search_text = build_search_text(payload)
+    if not isinstance(getattr(paper, "analysis_confidence_breakdown", None), dict):
+        paper.analysis_confidence_breakdown = {}
+    if not isinstance(getattr(paper, "analysis_warnings", None), list):
+        paper.analysis_warnings = []
+    if not isinstance(getattr(paper, "classification_evidence", None), list):
+        paper.classification_evidence = []
+    paper.search_text = build_search_text(
+        {
+            "title": paper.title,
+            "authors": paper.authors or [],
+            "year": paper.year,
+            "category": paper.category,
+            "collections": paper.collections or [],
+            "tags": paper.tags or [],
+            "abstract_original": paper.abstract_original,
+            "abstract_summary_zh": paper.abstract_summary_zh,
+            "list_summary_zh": paper.list_summary_zh,
+            "filename": paper.filename,
+            "source_note": paper.source_note,
+        }
+    )
     paper.token_vector = hash_vector(tokenize(paper.search_text))
     paper.updated_at = datetime.utcnow()
 
@@ -315,6 +338,9 @@ def paper_to_dict(paper: Paper) -> dict:
         "locked_fields": paper.locked_fields or [],
         "publish_status": paper.publish_status or "published",
         "analysis_confidence": float(paper.analysis_confidence or 0.0),
+        "analysis_confidence_breakdown": paper.analysis_confidence_breakdown or {},
+        "analysis_warnings": paper.analysis_warnings or [],
+        "classification_evidence": paper.classification_evidence or [],
     }
 
 
@@ -428,6 +454,226 @@ def set_publish_status(db: Session, paper_id: str, status: str) -> tuple[bool, d
     paper.updated_at = datetime.utcnow()
     db.commit()
     return True, {"ok": True, "id": paper_id, "publish_status": next_status}
+
+
+def _resolve_local_file_path(paper: Paper, library_files_dir: Path) -> Path | None:
+    for raw in (paper.file_path, paper.file_url):
+        value = str(raw or "").strip()
+        if not value:
+            continue
+        if value.startswith("http://") or value.startswith("https://"):
+            continue
+        norm = value.replace("\\", "/").lstrip("/")
+        if norm.startswith("files/"):
+            candidate = library_files_dir / norm[len("files/") :]
+        elif "/files/" in norm:
+            candidate = library_files_dir / norm.split("/files/", 1)[1]
+        elif "/" not in norm:
+            candidate = library_files_dir / norm
+        else:
+            candidate = Path(norm)
+        if candidate.exists() and candidate.is_file():
+            return candidate
+    return None
+
+
+def _apply_reanalysis_payload(
+    db: Session,
+    paper: Paper,
+    payload: dict[str, Any],
+    keep_status_on_trashed_or_rejected: bool = True,
+) -> tuple[list[str], Paper]:
+    before = paper_to_dict(paper)
+    merged = {
+        "id": paper.id,
+        "title": paper.title or "",
+        "authors": paper.authors or [],
+        "year": paper.year or "",
+        "category": paper.category or "",
+        "collections": paper.collections or [],
+        "tags": paper.tags or [],
+        "abstract_original": paper.abstract_original or "",
+        "abstract_summary_zh": paper.abstract_summary_zh or "",
+        "list_summary_zh": paper.list_summary_zh or "",
+        "filename": paper.filename or "",
+        "source_note": paper.source_note or "",
+        "added_at": paper.added_at or now_text(),
+        "file_path": paper.file_path or "",
+        "file_url": paper.file_url or "",
+        "manual_edit": bool(paper.manual_edit),
+        "locked_fields": paper.locked_fields or [],
+        "publish_status": paper.publish_status or "pending_review",
+        "analysis_confidence": float(paper.analysis_confidence or 0.0),
+        "analysis_confidence_breakdown": paper.analysis_confidence_breakdown or {},
+        "analysis_warnings": paper.analysis_warnings or [],
+        "classification_evidence": paper.classification_evidence or [],
+    }
+
+    for key, value in payload.items():
+        if key in merged:
+            merged[key] = value
+
+    locked = set(paper.locked_fields or [])
+    for key in locked:
+        if hasattr(paper, key) and key in merged:
+            merged[key] = getattr(paper, key)
+
+    if keep_status_on_trashed_or_rejected and (paper.publish_status in {"trashed", "rejected"}):
+        merged["publish_status"] = paper.publish_status
+
+    updated = upsert_paper(db, merged)
+    after = paper_to_dict(updated)
+    changed_fields = sorted(key for key in after.keys() if after.get(key) != before.get(key))
+    return changed_fields, updated
+
+
+def trash_paper(db: Session, paper_id: str) -> tuple[bool, dict]:
+    return set_publish_status(db, paper_id, "trashed")
+
+
+def restore_paper(db: Session, paper_id: str) -> tuple[bool, dict]:
+    return set_publish_status(db, paper_id, "pending_review")
+
+
+def _latest_source_url(db: Session, paper_id: str) -> str:
+    source = (
+        db.query(Source)
+        .filter(Source.paper_id == paper_id, Source.source_type == "url")
+        .order_by(Source.created_at.desc())
+        .first()
+    )
+    return str(source.source_url or "").strip() if source else ""
+
+
+def reanalyze_paper(db: Session, paper_id: str, library_files_dir: Path) -> tuple[bool, dict]:
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+    if not paper:
+        return False, {"ok": False, "error": "paper_not_found", "id": paper_id}
+
+    text = ""
+    filename = paper.filename or paper.id
+    source_mode = "fallback"
+
+    local_file = _resolve_local_file_path(paper, library_files_dir)
+    if local_file and local_file.suffix.lower() in SUPPORTED_EXTENSIONS and local_file.suffix.lower() != ".zip":
+        text = extract_text_from_file(local_file)
+        filename = local_file.name
+        source_mode = "file"
+    else:
+        source_url = _latest_source_url(db, paper.id)
+        if source_url:
+            try:
+                title, page_text = fetch_url_text(source_url)
+                text = page_text
+                filename = reformat_url_title(title, source_url)
+                source_mode = "url"
+            except Exception:
+                text = ""
+
+    if not text:
+        text = clean_text(
+            "\n".join(
+                [
+                    paper.title or "",
+                    paper.abstract_original or "",
+                    paper.abstract_summary_zh or "",
+                    " ".join(paper.tags or []),
+                ]
+            )
+        )
+        source_mode = "fallback"
+
+    if not text:
+        return False, {"ok": False, "error": "reanalyze_text_empty", "id": paper_id}
+
+    payload = build_paper_payload(filename, text)
+    payload["id"] = paper.id
+    if paper.file_path:
+        payload["file_path"] = paper.file_path
+    if paper.file_url:
+        payload["file_url"] = paper.file_url
+    if paper.added_at:
+        payload["added_at"] = paper.added_at
+    if paper.source_note:
+        payload["source_note"] = paper.source_note
+
+    changed_fields, updated = _apply_reanalysis_payload(db, paper, payload)
+    db.commit()
+    return True, {
+        "ok": True,
+        "id": paper_id,
+        "publish_status": updated.publish_status or "pending_review",
+        "analysis_confidence": float(updated.analysis_confidence or 0.0),
+        "warnings": ensure_list(updated.analysis_warnings),
+        "updated_fields": changed_fields,
+        "source_mode": source_mode,
+    }
+
+
+def purge_paper(
+    db: Session,
+    paper_id: str,
+    library_files_dir: Path,
+    delete_file: bool = True,
+) -> tuple[bool, dict]:
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+    if not paper:
+        return False, {"ok": False, "error": "paper_not_found", "id": paper_id}
+
+    file_deleted = False
+    file_kept_reason = ""
+    if delete_file:
+        local_file = _resolve_local_file_path(paper, library_files_dir)
+        if local_file and local_file.exists():
+            raw_refs = [str(paper.file_path or "").strip(), str(paper.file_url or "").strip()]
+            refs: list[str] = []
+            for raw in raw_refs:
+                if not raw:
+                    continue
+                refs.append(raw)
+                norm = raw.replace("\\", "/").lstrip("/")
+                if norm.startswith("files/"):
+                    refs.append(norm)
+                    refs.append(f"/{norm}")
+                elif "/files/" in norm:
+                    tail = norm.split("/files/", 1)[1].lstrip("/")
+                    refs.append(f"files/{tail}")
+                    refs.append(f"/files/{tail}")
+                elif "/" not in norm:
+                    refs.append(norm)
+                    refs.append(f"files/{norm}")
+                    refs.append(f"/files/{norm}")
+            refs = sorted(set(x for x in refs if x))
+            same_ref_count = 0
+            if refs:
+                conds = []
+                for ref in refs:
+                    conds.append(Paper.file_path == ref)
+                    conds.append(Paper.file_url == ref)
+                same_ref_count = db.query(Paper).filter(Paper.id != paper.id, or_(*conds)).count()
+            if same_ref_count == 0:
+                try:
+                    local_file.unlink(missing_ok=True)
+                    file_deleted = True
+                except Exception:
+                    file_deleted = False
+                    file_kept_reason = "file_delete_failed"
+            else:
+                file_kept_reason = "file_referenced_by_other_papers"
+        elif delete_file:
+            file_kept_reason = "file_not_found"
+
+    db.query(PaperChunk).filter(PaperChunk.paper_id == paper.id).delete()
+    db.query(Source).filter(Source.paper_id == paper.id).update({Source.paper_id: None})
+    db.delete(paper)
+    db.commit()
+    return True, {
+        "ok": True,
+        "id": paper_id,
+        "purged": True,
+        "file_deleted": file_deleted,
+        "file_kept_reason": file_kept_reason,
+    }
 
 
 def dump_result_to_json(task: IngestTask) -> str:

@@ -37,6 +37,9 @@ class Paper(Base):
     token_vector: Mapped[list] = mapped_column(JSON, default=list)
     publish_status: Mapped[str] = mapped_column(String(32), default="published", index=True)
     analysis_confidence: Mapped[float] = mapped_column(Float, default=1.0)
+    analysis_confidence_breakdown: Mapped[dict] = mapped_column(JSON, default=dict)
+    analysis_warnings: Mapped[list] = mapped_column(JSON, default=list)
+    classification_evidence: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 

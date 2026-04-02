@@ -58,6 +58,9 @@ def main() -> None:
                 "locked_fields": item.get("locked_fields") or [],
                 "publish_status": item.get("publish_status", "published"),
                 "analysis_confidence": float(item.get("analysis_confidence", 1.0) or 1.0),
+                "analysis_confidence_breakdown": item.get("analysis_confidence_breakdown") or {},
+                "analysis_warnings": item.get("analysis_warnings") or [],
+                "classification_evidence": item.get("classification_evidence") or [],
             }
             if not str(payload["list_summary_zh"]).strip():
                 payload["list_summary_zh"] = build_list_summary(

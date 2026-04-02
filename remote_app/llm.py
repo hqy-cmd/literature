@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 import requests
@@ -104,3 +105,100 @@ def explain_with_llm(query: str, title: str, reasons: list[str]) -> str:
     )
     return content.strip()
 
+
+ALLOWED_TOP_CATEGORIES = {"灵巧手", "脑肿瘤", "肿瘤消融", "其他"}
+
+
+def _extract_json_payload(content: str) -> dict[str, Any]:
+    raw = (content or "").strip()
+    if not raw:
+        return {}
+    try:
+        value = json.loads(raw)
+        if isinstance(value, dict):
+            return value
+    except Exception:
+        pass
+
+    candidates = re.findall(r"\{[\s\S]*\}", raw)
+    for candidate in reversed(candidates):
+        try:
+            value = json.loads(candidate)
+            if isinstance(value, dict):
+                return value
+        except Exception:
+            continue
+    return {}
+
+
+def _as_str(value: Any, limit: int = 2000) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    return text[:limit]
+
+
+def _as_list(value: Any, item_limit: int = 40, text_limit: int = 120) -> list[str]:
+    if isinstance(value, str):
+        items = re.split(r"[,\n;；、]", value)
+    elif isinstance(value, list):
+        items = value
+    else:
+        items = []
+    out: list[str] = []
+    seen = set()
+    for item in items:
+        text = str(item or "").strip()
+        if not text:
+            continue
+        text = text[:text_limit]
+        if text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+        if len(out) >= item_limit:
+            break
+    return out
+
+
+def extract_ingest_with_llm(filename: str, text: str) -> dict[str, Any]:
+    prompt = (
+        "你是文献入库抽取器。请从给定文本抽取结构化信息，并且只返回 JSON 对象。"
+        "JSON 字段必须包含："
+        "title(string), authors(array[string]), year(string), "
+        "abstract_summary_zh(string), list_summary_zh(string,最多两句), "
+        "top_category(string,只能是 灵巧手/脑肿瘤/肿瘤消融/其他), "
+        "tags(array[string]), evidence(array[string])。"
+        "禁止输出额外解释文本。"
+    )
+    payload = {
+        "filename": filename,
+        "text": (text or "")[:16000],
+    }
+    content = _chat_completion(
+        [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
+        temperature=0.0,
+    )
+    if not content:
+        return {}
+    value = _extract_json_payload(content)
+    if not value:
+        return {}
+
+    top = _as_str(value.get("top_category"), 32)
+    if top not in ALLOWED_TOP_CATEGORIES:
+        top = "其他"
+
+    return {
+        "title": _as_str(value.get("title"), 260),
+        "authors": _as_list(value.get("authors"), item_limit=20, text_limit=80),
+        "year": _as_str(value.get("year"), 8),
+        "abstract_summary_zh": _as_str(value.get("abstract_summary_zh"), 2200),
+        "list_summary_zh": _as_str(value.get("list_summary_zh"), 260),
+        "top_category": top,
+        "tags": _as_list(value.get("tags"), item_limit=24, text_limit=60),
+        "evidence": _as_list(value.get("evidence"), item_limit=12, text_limit=120),
+    }

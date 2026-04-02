@@ -152,9 +152,15 @@
       </div>
       <div class="row">
         <div class="result-head">
-          <strong>待审文献</strong>
-          <button id="refreshPendingBtn" class="btn ghost">刷新待审</button>
+          <strong>文献审核列表</strong>
+          <button id="refreshPendingBtn" class="btn ghost">刷新列表</button>
         </div>
+        <select id="reviewStatus" class="select">
+          <option value="pending_review">待审</option>
+          <option value="published">已发布</option>
+          <option value="rejected">已退回</option>
+          <option value="trashed">回收站</option>
+        </select>
         <div id="pendingList"></div>
       </div>
       <div id="leftState" class="state">请先填写 Admin Token。</div>
@@ -208,6 +214,7 @@
       urlBtn: document.getElementById('urlBtn'),
       refreshTaskBtn: document.getElementById('refreshTaskBtn'),
       refreshPendingBtn: document.getElementById('refreshPendingBtn'),
+      reviewStatus: document.getElementById('reviewStatus'),
       taskList: document.getElementById('taskList'),
       pendingList: document.getElementById('pendingList'),
       leftState: document.getElementById('leftState'),
@@ -233,6 +240,13 @@
 
     function safe(v, fallback = '') {
       return v === null || v === undefined ? fallback : String(v);
+    }
+
+    function normalizeHref(raw) {
+      const value = safe(raw, '').trim();
+      if (!value) return '';
+      if (/^https?:\/\//i.test(value)) return value;
+      return value.startsWith('/') ? value : `/${value}`;
     }
 
     function headers(isJson = true) {
@@ -285,7 +299,9 @@
         el.resultList.innerHTML = '<article class="card"><div class="meta">没有检索结果</div></article>';
         return;
       }
-      el.resultList.innerHTML = items.map(item => `
+      el.resultList.innerHTML = items.map(item => {
+        const href = normalizeHref(item.file_url || item.file_path);
+        return `
         <article class="card">
           <h3 class="title">${safe(item.title, safe(item.filename, '未命名'))}</h3>
           <div class="meta">
@@ -298,10 +314,11 @@
           <p>${safe(item.abstract_summary_zh, '未生成摘要')}</p>
           <div class="actions">
             <button class="btn ghost" data-edit-id="${safe(item.id)}">编辑</button>
-            ${(item.file_url || item.file_path) ? `<a class="btn ghost" href="${encodeURI((item.file_url || item.file_path).startsWith('/') ? (item.file_url || item.file_path) : '/' + (item.file_url || item.file_path))}" target="_self">打开原文</a>` : ''}
+            ${href ? `<a class="btn ghost" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}
           </div>
         </article>
-      `).join('');
+      `;
+      }).join('');
     }
 
     async function runSearch() {
@@ -387,18 +404,25 @@
 
     async function refreshPending() {
       if (!ensureToken()) return;
+      const status = (el.reviewStatus.value || 'pending_review').trim();
       try {
-        const resp = await fetch('/api/admin/papers?status=pending_review&page=1&page_size=30', { headers: headers(false) });
+        const resp = await fetch(`/api/admin/papers?status=${encodeURIComponent(status)}&page=1&page_size=30`, { headers: headers(false) });
         const data = await resp.json();
         if (!resp.ok || !data.ok) throw new Error(data.detail || 'pending_list_failed');
         const items = data.items || [];
         el.pendingList.innerHTML = items.map(item => `
           <div class="task">
             <div><strong>${safe(item.title, safe(item.filename, '未命名文献'))}</strong></div>
-            <div>ID: ${safe(item.id)} | 置信度: ${safe(item.analysis_confidence, '-')}</div>
+            <div>ID: ${safe(item.id)} | 状态: ${safe(item.publish_status, '-')} | 置信度: ${safe(item.analysis_confidence, '-')}</div>
+            ${(item.analysis_warnings || []).length ? `<div>告警: ${(item.analysis_warnings || []).join('；')}</div>` : ''}
+            ${(item.classification_evidence || []).length ? `<div>分类证据: ${(item.classification_evidence || []).join('、')}</div>` : ''}
             <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
-              <button class="btn ghost" data-publish-id="${safe(item.id)}">发布</button>
-              <button class="btn ghost" data-reject-id="${safe(item.id)}">退回</button>
+              <button class="btn ghost" data-reanalyze-id="${safe(item.id)}">重审</button>
+              ${item.publish_status !== 'published' ? `<button class="btn ghost" data-publish-id="${safe(item.id)}">发布</button>` : ''}
+              ${item.publish_status !== 'rejected' ? `<button class="btn ghost" data-reject-id="${safe(item.id)}">退回</button>` : ''}
+              ${item.publish_status !== 'trashed' ? `<button class="btn ghost" data-trash-id="${safe(item.id)}">移入回收站</button>` : ''}
+              ${item.publish_status === 'trashed' ? `<button class="btn ghost" data-restore-id="${safe(item.id)}">恢复</button>` : ''}
+              ${item.publish_status === 'trashed' ? `<button class="btn ghost" data-purge-id="${safe(item.id)}">彻底删除</button>` : ''}
             </div>
           </div>
         `).join('') || '<div class="task">暂无待审文献</div>';
@@ -436,6 +460,72 @@
         refreshPending();
       } catch (err) {
         setLeftState(`退回失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function trashPaper(id) {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/trash`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'trash_failed');
+        setLeftState(`已移入回收站：${id}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`移入回收站失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function restorePaper(id) {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/restore`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'restore_failed');
+        setLeftState(`已恢复：${id}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`恢复失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function purgePaper(id) {
+      if (!ensureToken()) return;
+      if (!window.confirm(`确认彻底删除文献 ${id}？将默认尝试同时删除原文件。`)) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/purge?delete_file=true`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'purge_failed');
+        const keep = data.file_kept_reason ? `（文件未删：${data.file_kept_reason}）` : '';
+        setLeftState(`已彻底删除：${id}${keep}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`彻底删除失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function reanalyzePaper(id) {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch(`/api/admin/papers/${encodeURIComponent(id)}/reanalyze`, {
+          method: 'POST',
+          headers: headers(false),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'reanalyze_failed');
+        setLeftState(`重审完成：${id}，状态=${safe(data.publish_status)}，置信度=${safe(data.analysis_confidence)}`, 'ok');
+        refreshPending();
+      } catch (err) {
+        setLeftState(`重审失败：${err.message}`, 'warn');
       }
     }
 
@@ -481,6 +571,7 @@
     el.urlBtn.addEventListener('click', parseUrl);
     el.refreshTaskBtn.addEventListener('click', refreshTasks);
     el.refreshPendingBtn.addEventListener('click', refreshPending);
+    el.reviewStatus.addEventListener('change', refreshPending);
     el.resultList.addEventListener('click', e => {
       const target = e.target.closest('[data-edit-id]');
       if (!target) return;
@@ -491,6 +582,11 @@
     el.cancelEditBtn.addEventListener('click', closeEditDrawer);
     el.saveEditBtn.addEventListener('click', saveEdit);
     el.pendingList.addEventListener('click', e => {
+      const reanalyzeBtn = e.target.closest('[data-reanalyze-id]');
+      if (reanalyzeBtn) {
+        reanalyzePaper(reanalyzeBtn.dataset.reanalyzeId);
+        return;
+      }
       const publishBtn = e.target.closest('[data-publish-id]');
       if (publishBtn) {
         publishPaper(publishBtn.dataset.publishId);
@@ -499,6 +595,21 @@
       const rejectBtn = e.target.closest('[data-reject-id]');
       if (rejectBtn) {
         rejectPaper(rejectBtn.dataset.rejectId);
+        return;
+      }
+      const trashBtn = e.target.closest('[data-trash-id]');
+      if (trashBtn) {
+        trashPaper(trashBtn.dataset.trashId);
+        return;
+      }
+      const restoreBtn = e.target.closest('[data-restore-id]');
+      if (restoreBtn) {
+        restorePaper(restoreBtn.dataset.restoreId);
+        return;
+      }
+      const purgeBtn = e.target.closest('[data-purge-id]');
+      if (purgeBtn) {
+        purgePaper(purgeBtn.dataset.purgeId);
       }
     });
 
