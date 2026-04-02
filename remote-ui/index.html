@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>HQY 文献库</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --surface: #f8fbff;
+      --panel: #ffffff;
+      --ink: #152033;
+      --muted: #5f718a;
+      --line: #d4ddeb;
+      --accent: #0f5fd8;
+      --accent-soft: #e7f0ff;
+      --ok: #0d7648;
+      --warn: #8a4f00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 520px at 6% -28%, #deebff 0%, transparent 64%),
+        radial-gradient(900px 420px at 104% -38%, #ffe9d4 0%, transparent 62%),
+        var(--bg);
+      font-family: "Söhne", "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
+      opacity: 0;
+      animation: page-in 420ms ease forwards;
+    }
+    @keyframes page-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: linear-gradient(140deg, #ffffff 0%, var(--surface) 100%);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 16px 30px rgba(19, 33, 56, 0.07);
+    }
+    .brand {
+      font-size: 26px;
+      letter-spacing: 0.8px;
+      font-weight: 800;
+      margin: 0;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    .search-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      min-width: 0;
+    }
+    .input, .select, .btn {
+      border-radius: 12px;
+      border: 1px solid #b7c7dd;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+    .input {
+      width: 100%;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+    .select { padding: 10px 11px; }
+    .btn {
+      padding: 10px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-ghost {
+      background: #fff;
+      color: var(--accent);
+      border-color: #aac2e7;
+    }
+    .state {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .state.ok { color: var(--ok); }
+    .state.warn { color: var(--warn); }
+    .board {
+      display: grid;
+      grid-template-columns: 260px 1fr 360px;
+      gap: 12px;
+      align-items: start;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+      box-shadow: 0 8px 20px rgba(20, 29, 46, 0.05);
+    }
+    .panel-head {
+      padding: 12px 13px 8px;
+      border-bottom: 1px solid #edf2f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-head strong {
+      font-size: 13px;
+      letter-spacing: .2px;
+    }
+    .tiny {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .category-list {
+      padding: 8px;
+      display: grid;
+      gap: 4px;
+      max-height: calc(100vh - 180px);
+      overflow: auto;
+    }
+    .category-item {
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      padding: 10px 9px;
+      color: #1b2d47;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all .18s ease;
+      font-size: 13px;
+    }
+    .category-item:hover { background: #f4f8ff; border-color: #d9e5f7; }
+    .category-item.active {
+      background: var(--accent-soft);
+      color: #0f4ca7;
+      border-color: #c5daf8;
+    }
+    .workspace-head {
+      padding: 12px 13px;
+      border-bottom: 1px solid #edf2f9;
+      display: grid;
+      gap: 10px;
+    }
+    .summary {
+      padding: 8px 10px;
+      border-left: 3px solid var(--accent);
+      background: #f2f7ff;
+      border-radius: 0 10px 10px 0;
+      font-size: 12px;
+      color: #20406d;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+    }
+    .list-wrap {
+      padding: 0 13px 12px;
+    }
+    .table-head, .paper-row {
+      display: grid;
+      grid-template-columns: 1.8fr .8fr .9fr;
+      gap: 10px;
+      align-items: start;
+    }
+    .table-head {
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 10px 0 8px;
+    }
+    .rows {
+      border-top: 1px solid #edf2f9;
+    }
+    .paper-row {
+      padding: 12px 0;
+      border-bottom: 1px solid #edf2f9;
+      cursor: pointer;
+      transition: transform .16s ease, background-color .16s ease;
+      animation: row-in .32s ease both;
+    }
+    .paper-row:hover {
+      transform: translateX(2px);
+      background: #fbfdff;
+    }
+    .paper-row.active { background: #f2f7ff; }
+    @keyframes row-in {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .paper-title {
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .paper-sub {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .paper-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: flex-start;
+    }
+    .tag {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      background: #edf3fb;
+      color: #355277;
+    }
+    .pager {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding-top: 10px;
+    }
+    .pager-info {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .detail {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+    .detail-body {
+      padding: 12px 13px 16px;
+      display: grid;
+      gap: 10px;
+    }
+    .detail-title {
+      margin: 0;
+      font-size: 19px;
+      line-height: 1.4;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .reason-box {
+      border-left: 3px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      background: #edf4ff;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #143c70;
+      display: grid;
+      gap: 4px;
+    }
+    .summary-text {
+      font-size: 13px;
+      color: #1c2c45;
+      line-height: 1.6;
+    }
+    .link {
+      display: inline-block;
+      text-decoration: none;
+      color: #fff;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .empty {
+      padding: 28px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 1200px) {
+      .board { grid-template-columns: 220px 1fr; }
+      .detail { grid-column: 1 / -1; position: relative; top: 0; max-height: none; }
+    }
+    @media (max-width: 860px) {
+      .topbar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .search-wrap {
+        grid-template-columns: 1fr;
+      }
+      .state { text-align: left; }
+      .board { grid-template-columns: 1fr; }
+      .table-head, .paper-row { grid-template-columns: 1fr; }
+      .meta-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <h1 class="brand">HQY 文献库</h1>
+        <div class="sub">分类目录优先 · 分页浏览 · AI 检索增强</div>
+      </div>
+      <div class="search-wrap">
+        <input id="qInput" class="input" placeholder="输入关键词筛选列表，或点击 AI 检索自然语言问题" />
+        <select id="sortSelect" class="select">
+          <option value="updated_desc">最新更新</option>
+          <option value="year_desc">年份降序</option>
+          <option value="year_asc">年份升序</option>
+          <option value="title_asc">标题 A-Z</option>
+        </select>
+        <button id="aiSearchBtn" class="btn btn-primary">AI 检索</button>
+      </div>
+      <div id="stateText" class="state">正在加载目录…</div>
+    </header>
+
+    <section class="board">
+      <aside class="panel">
+        <div class="panel-head">
+          <strong>分类目录</strong>
+          <span id="categoryCount" class="tiny">0 类</span>
+        </div>
+        <div id="categoryList" class="category-list"></div>
+      </aside>
+
+      <main class="panel">
+        <div class="workspace-head">
+          <div class="summary" id="summaryText">目录模式：默认展示全部文献，支持分类与分页浏览。</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="browseBtn" class="btn btn-ghost">目录浏览</button>
+            <button id="filterBtn" class="btn btn-ghost">筛选列表</button>
+          </div>
+        </div>
+        <div class="list-wrap">
+          <div class="table-head">
+            <div>文献 / 摘要</div>
+            <div>分类 / 年份</div>
+            <div>标签</div>
+          </div>
+          <div id="rows" class="rows"></div>
+          <div class="pager">
+            <div id="pagerInfo" class="pager-info">第 1 页 / 共 1 页</div>
+            <div style="display:flex; gap:8px;">
+              <button id="prevBtn" class="btn btn-ghost">上一页</button>
+              <button id="nextBtn" class="btn btn-ghost">下一页</button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <aside class="panel detail">
+        <div class="panel-head">
+          <strong>文献详情</strong>
+          <span id="modeTag" class="tiny">目录模式</span>
+        </div>
+        <div id="detailBody" class="detail-body"></div>
+      </aside>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      mode: 'browse',
+      categories: [],
+      selectedCategory: '',
+      page: 1,
+      pageSize: 24,
+      total: 0,
+      allTotal: 0,
+      totalPages: 1,
+      sort: 'updated_desc',
+      q: '',
+      papers: [],
+      selectedId: '',
+      searchSummary: '',
+    };
+
+    const el = {
+      qInput: document.getElementById('qInput'),
+      sortSelect: document.getElementById('sortSelect'),
+      aiSearchBtn: document.getElementById('aiSearchBtn'),
+      filterBtn: document.getElementById('filterBtn'),
+      browseBtn: document.getElementById('browseBtn'),
+      stateText: document.getElementById('stateText'),
+      summaryText: document.getElementById('summaryText'),
+      modeTag: document.getElementById('modeTag'),
+      categoryCount: document.getElementById('categoryCount'),
+      categoryList: document.getElementById('categoryList'),
+      rows: document.getElementById('rows'),
+      pagerInfo: document.getElementById('pagerInfo'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      detailBody: document.getElementById('detailBody'),
+    };
+
+    function safe(v, fallback = '未提供') {
+      return v === null || v === undefined || String(v).trim() === '' ? fallback : String(v).trim();
+    }
+
+    function listText(v, fallback = '未提取') {
+      return Array.isArray(v) && v.length ? v.join('、') : fallback;
+    }
+
+    function setState(text, cls = '') {
+      el.stateText.className = `state ${cls}`.trim();
+      el.stateText.textContent = text;
+    }
+
+    function setSummary(text) {
+      el.summaryText.textContent = text;
+    }
+
+    function renderCategories() {
+      const allBtn = `
+        <button class="category-item ${state.selectedCategory === '' ? 'active' : ''}" data-cat="">
+          <span>全部文献</span><span>${state.allTotal || state.total}</span>
+        </button>`;
+      const items = state.categories.map(item => `
+        <button class="category-item ${state.selectedCategory === item.name ? 'active' : ''}" data-cat="${item.name}">
+          <span>${item.name}</span><span>${item.count}</span>
+        </button>
+      `).join('');
+      el.categoryCount.textContent = `${state.categories.length} 类`;
+      el.categoryList.innerHTML = allBtn + items;
+    }
+
+    function renderRows() {
+      if (!state.papers.length) {
+        el.rows.innerHTML = '<div class="empty">当前条件下没有文献。</div>';
+        return;
+      }
+      el.rows.innerHTML = state.papers.map((paper, idx) => {
+        const active = paper.id === state.selectedId ? 'active' : '';
+        return `
+          <article class="paper-row ${active}" data-id="${paper.id}" style="animation-delay:${Math.min(idx * 20, 240)}ms">
+            <div>
+              <div class="paper-title">${safe(paper.title, safe(paper.filename, '未命名文献'))}</div>
+              <div class="paper-sub">${safe(paper.abstract_summary_zh, '未生成摘要').slice(0, 120)}</div>
+            </div>
+            <div class="paper-sub">
+              <div>${safe(paper.category, '未分类')}</div>
+              <div>${safe(paper.year, '未知年份')}</div>
+              <div>${listText(paper.authors, '作者未提取')}</div>
+            </div>
+            <div class="paper-tags">
+              ${(paper.tags || []).slice(0, 5).map(tag => `<span class="tag">${tag}</span>`).join('')}
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderDetail() {
+      const paper = state.papers.find(x => x.id === state.selectedId) || state.papers[0];
+      if (!paper) {
+        el.detailBody.innerHTML = '<div class="empty">请选择一篇文献查看详情。</div>';
+        return;
+      }
+      state.selectedId = paper.id;
+      const reasons = (paper.hit_reasons || []).map(x => `<div>${safe(x)}</div>`).join('');
+      const href = safe(paper.file_url || paper.file_path, '');
+      el.detailBody.innerHTML = `
+        <h2 class="detail-title">${safe(paper.title, safe(paper.filename, '未命名文献'))}</h2>
+        <div class="meta-grid">
+          <div>分类：${safe(paper.category, '未分类')}</div>
+          <div>年份：${safe(paper.year, '未知')}</div>
+          <div>作者：${listText(paper.authors)}</div>
+          <div>加入时间：${safe(paper.added_at, '未记录')}</div>
+        </div>
+        ${reasons ? `<div class="reason-box">${reasons}</div>` : ''}
+        <div class="summary-text">${safe(paper.abstract_summary_zh, '未生成摘要')}</div>
+        ${href ? `<a class="link" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}
+      `;
+    }
+
+    function updatePager() {
+      el.pagerInfo.textContent = `第 ${state.page} 页 / 共 ${state.totalPages} 页 · 共 ${state.total} 篇`;
+      el.prevBtn.disabled = state.page <= 1;
+      el.nextBtn.disabled = state.page >= state.totalPages;
+    }
+
+    async function loadCategories() {
+      const resp = await fetch('/api/categories');
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.detail || 'categories_failed');
+      state.categories = data.items || [];
+    }
+
+    async function loadPapers() {
+      const params = new URLSearchParams({
+        page: String(state.page),
+        page_size: String(state.pageSize),
+        category: state.selectedCategory,
+        sort: state.sort,
+        q: state.q,
+      });
+      const resp = await fetch(`/api/papers?${params.toString()}`);
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.detail || 'papers_failed');
+      state.mode = 'browse';
+      state.papers = data.items || [];
+      state.total = data.total || 0;
+      if (!state.selectedCategory && !state.q) {
+        state.allTotal = state.total;
+      }
+      state.page = data.page || 1;
+      state.totalPages = data.total_pages || 1;
+      if (!state.papers.find(x => x.id === state.selectedId)) {
+        state.selectedId = state.papers[0] ? state.papers[0].id : '';
+      }
+      setSummary(`目录模式：${state.selectedCategory || '全部文献'} · 按“${state.sort}”排序`);
+      el.modeTag.textContent = '目录模式';
+      setState(`已加载 ${state.total} 篇文献`, 'ok');
+      renderCategories();
+      renderRows();
+      renderDetail();
+      updatePager();
+    }
+
+    async function runAiSearch() {
+      const q = (el.qInput.value || '').trim();
+      if (!q) {
+        setState('请输入自然语言问题后再执行 AI 检索。', 'warn');
+        return;
+      }
+      setState('AI 检索中…');
+      const resp = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=24`);
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.detail || 'ai_search_failed');
+      state.mode = 'search';
+      state.searchSummary = data.summary || '';
+      state.papers = data.results || [];
+      state.total = state.papers.length;
+      state.page = 1;
+      state.totalPages = 1;
+      state.selectedId = state.papers[0] ? state.papers[0].id : '';
+      setSummary(`${safe(state.searchSummary)} | rewrite: ${(data.rewritten_terms || []).slice(0, 10).join('、') || '无'}`);
+      el.modeTag.textContent = 'AI 检索模式';
+      setState(`AI 检索完成：${state.total} 条`, 'ok');
+      renderRows();
+      renderDetail();
+      updatePager();
+    }
+
+    async function init() {
+      try {
+        state.sort = el.sortSelect.value;
+        await loadCategories();
+        await loadPapers();
+      } catch (err) {
+        setState(`加载失败：${err.message}`, 'warn');
+      }
+    }
+
+    el.categoryList.addEventListener('click', async e => {
+      const target = e.target.closest('[data-cat]');
+      if (!target) return;
+      state.selectedCategory = target.dataset.cat || '';
+      state.page = 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`分类切换失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.rows.addEventListener('click', e => {
+      const row = e.target.closest('[data-id]');
+      if (!row) return;
+      state.selectedId = row.dataset.id;
+      renderRows();
+      renderDetail();
+    });
+
+    el.filterBtn.addEventListener('click', async () => {
+      state.q = (el.qInput.value || '').trim();
+      state.sort = el.sortSelect.value;
+      state.page = 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`筛选失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.aiSearchBtn.addEventListener('click', async () => {
+      try {
+        await runAiSearch();
+      } catch (err) {
+        setState(`AI 检索失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.browseBtn.addEventListener('click', async () => {
+      state.mode = 'browse';
+      state.page = 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`切回目录失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.prevBtn.addEventListener('click', async () => {
+      if (state.mode !== 'browse' || state.page <= 1) return;
+      state.page -= 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`翻页失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.nextBtn.addEventListener('click', async () => {
+      if (state.mode !== 'browse' || state.page >= state.totalPages) return;
+      state.page += 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`翻页失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.qInput.addEventListener('keydown', async e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      state.q = (el.qInput.value || '').trim();
+      state.page = 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`筛选失败：${err.message}`, 'warn');
+      }
+    });
+
+    el.sortSelect.addEventListener('change', async () => {
+      state.sort = el.sortSelect.value;
+      state.page = 1;
+      try {
+        await loadPapers();
+      } catch (err) {
+        setState(`排序失败：${err.message}`, 'warn');
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

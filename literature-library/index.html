@@ -47,11 +47,8 @@
 <body>
   <div class="layout">
     <aside class="sidebar">
-      <input id="searchInput" class="search" placeholder="搜索标题、摘要、作者、标签…" />
       <div class="console-box">
         <input id="consoleInput" class="console-input" placeholder="试试：找一下机器人识别和抓取的相关文章 / 关于纳米温度计有哪些创新点" />
-        <div class="console-hint">当前为只读智能检索：支持自然语言查标题、作者、分类、标签、摘要，并给出相关结果与简单总结。</div>
-        <div id="consoleResult" class="console-result"></div>
       </div>
       <div class="statbar"><span class="pill" id="paperCount">0 篇</span><span class="pill" id="collectionCount">0 类</span></div>
       <details class="group" open><summary>研究目录</summary><div class="menu-body" id="menuTree"></div></details>
@@ -619,7 +616,7 @@
     const data = JSON.parse(document.getElementById('embeddedData').textContent.trim());
     const menuGroups = data.menu_groups || {};
     const state = { allPapers: Array.isArray(data.papers) ? data.papers : [], keyword:'', selectedFilter:'全部', editingId:null, smartResults:null, smartQuery:'' };
-    const el = { searchInput:document.getElementById('searchInput'), consoleInput:document.getElementById('consoleInput'), consoleResult:document.getElementById('consoleResult'), resultBar:document.getElementById('resultBar'), resultSummary:document.getElementById('resultSummary'), clearSmartSearchBtn:document.getElementById('clearSmartSearchBtn'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
+    const el = { consoleInput:document.getElementById('consoleInput'), resultBar:document.getElementById('resultBar'), resultSummary:document.getElementById('resultSummary'), clearSmartSearchBtn:document.getElementById('clearSmartSearchBtn'), paperList:document.getElementById('paperList'), menuTree:document.getElementById('menuTree'), paperCount:document.getElementById('paperCount'), collectionCount:document.getElementById('collectionCount'), editorBackdrop:document.getElementById('editorBackdrop'), editorCloseBtn:document.getElementById('editorCloseBtn'), editorCancelBtn:document.getElementById('editorCancelBtn'), editorSaveBtn:document.getElementById('editorSaveBtn'), editorStatus:document.getElementById('editorStatus'), editTitle:document.getElementById('editTitle'), editAuthors:document.getElementById('editAuthors'), editYear:document.getElementById('editYear'), editCategory:document.getElementById('editCategory'), editCollections:document.getElementById('editCollections'), editTags:document.getElementById('editTags'), editSummary:document.getElementById('editSummary'), editSourceNote:document.getElementById('editSourceNote') };
     const safeText = (v,f='未提供') => v===null||v===undefined||String(v).trim()==='' ? f : String(v).trim();
     const normalizeList = v => !v ? [] : Array.isArray(v) ? v.filter(Boolean) : [String(v)];
     const getCollections = p => normalizeList(p.collections && p.collections.length ? p.collections : [p.category]);
@@ -633,16 +630,22 @@
     }
     function tokenizeQuery(text) {
       const raw = (text || '').toLowerCase().trim();
-      const zhPhrases = raw.match(/[\u4e00-\u9fff]{2,}/g) || [];
+      const phrases = [];
+      const knownPhrases = ['机器人识别', '机器人抓取', '光声显微', '纳米温度计', '温度成像', '脑肿瘤', '脑组织', '肿瘤消融', '灵巧手', '视觉触觉融合', '多智能体强化学习'];
+      knownPhrases.forEach(p => { if (raw.includes(p)) phrases.push(p); });
+      const zhChunks = raw.match(/[\u4e00-\u9fff]{2,}/g) || [];
+      const zhSingles = [...new Set(zhChunks.flatMap(x => x.length <= 4 ? [x] : x.split(/(?<=..)/).filter(Boolean)).filter(x => x.length >= 2))];
       const enWords = raw.match(/[a-zA-Z][a-zA-Z\-]+/g) || [];
-      const base = [...zhPhrases, ...enWords].filter(Boolean);
+      const stop = new Set(['找一下','相关文章','关于','哪些','有关','方面','研究','一下','相关','文献','文章','创新点']);
+      const base = [...phrases, ...zhSingles, ...enWords].filter(x => x && !stop.has(x));
       const expansions = [];
       const map = [
-        { keys: ['机器人', '抓取', '识别', '灵巧手'], add: ['robot', 'robotic', 'grasp', 'grasping', 'dexterous', 'visual', 'tactile', '机器人抓取', '视觉触觉融合', '灵巧手'] },
-        { keys: ['光声', '光声显微', 'photoacoustic', 'pam'], add: ['photoacoustic', 'microscopy', 'photoacoustic microscopy', '光声显微'] },
-        { keys: ['纳米温度计', '温度计', '测温', 'temperature', 'thermometer'], add: ['nanothermometer', 'temperature imaging', 'thermometry', '温度成像', '荧光纳米温度计'] },
-        { keys: ['脑肿瘤', '胶质瘤', 'glioma', 'glioblastoma'], add: ['脑肿瘤', '脑组织', 'glioma', 'glioblastoma', 'brain tumor'] },
-        { keys: ['消融', '热疗', 'ablation'], add: ['tumor ablation', 'thermal ablation', 'microwave ablation', '肿瘤消融'] },
+        { keys: ['机器人识别', '机器人抓取', '灵巧手', '抓取'], add: ['robotic hand', 'grasp', 'grasping', 'dexterous hand', '机器人抓取', '灵巧手'] },
+        { keys: ['识别', '视觉', '触觉'], add: ['visual', 'tactile', '视觉触觉融合'] },
+        { keys: ['光声显微', '光声'], add: ['photoacoustic microscopy', 'photoacoustic', '光声显微'] },
+        { keys: ['纳米温度计', '温度成像', '测温'], add: ['nanothermometer', 'temperature imaging', 'thermometry', '荧光纳米温度计'] },
+        { keys: ['脑肿瘤', '胶质瘤'], add: ['glioma', 'glioblastoma', 'brain tumor', '脑肿瘤'] },
+        { keys: ['消融', '热疗'], add: ['tumor ablation', 'thermal ablation', 'microwave ablation', '肿瘤消融'] },
       ];
       for (const rule of map) {
         if (rule.keys.some(k => raw.includes(k.toLowerCase()))) expansions.push(...rule.add);
@@ -659,18 +662,23 @@
       const filename = (paper.filename || '').toLowerCase();
       let score = 0;
       const matched = [];
+      let strongHits = 0;
       for (const token of tokens) {
         if (!token) continue;
         let hit = false;
-        if (title.includes(token)) { score += 8; hit = true; }
-        if (tags.includes(token)) { score += 6; hit = true; }
-        if (category.includes(token) || collections.includes(token)) { score += 5; hit = true; }
+        const isPhrase = token.length >= 4 || token.includes(' ');
+        if (title.includes(token)) { score += isPhrase ? 12 : 8; hit = true; strongHits += 1; }
+        if (tags.includes(token)) { score += isPhrase ? 8 : 6; hit = true; }
+        if (category.includes(token) || collections.includes(token)) { score += isPhrase ? 7 : 5; hit = true; }
         if (authors.includes(token)) { score += 4; hit = true; }
-        if (abs.includes(token)) { score += 3; hit = true; }
-        if (filename.includes(token)) { score += 2; hit = true; }
+        if (abs.includes(token)) { score += isPhrase ? 4 : 2; hit = true; }
+        if (filename.includes(token)) { score += 1; hit = true; }
         if (hit) matched.push(token);
       }
-      return { score, matched:[...new Set(matched)] };
+      const uniqueMatched = [...new Set(matched)];
+      if (strongHits === 0 && uniqueMatched.length < 2) score = 0;
+      if (uniqueMatched.length >= 3) score += 4;
+      return { score, matched: uniqueMatched };
     }
     function summarizeSearchIntent(query, results) {
       const q = (query || '').trim();
@@ -694,17 +702,15 @@
       const ranked = state.allPapers.map(p => {
         const { score, matched } = scorePaperByTokens(p, tokens);
         return { ...p, _score: score, _matched: matched };
-      }).filter(x => x._score > 0).sort((a, b) => b._score - a._score).slice(0, 8);
+      }).filter(x => x._score > 0).sort((a, b) => b._score - a._score).slice(0, 6);
       const summary = summarizeSearchIntent(q, ranked);
       const lines = ranked.map((x, i) => `${i+1}. ${x.title}｜${x.category || '未分类'}｜${x.year || '年份未知'}｜命中：${x._matched.slice(0,5).join('、')}`);
-      el.consoleResult.textContent = summary + '\n\n' + (lines.length ? lines.join('\n') : '没有找到相关文献。');
       state.smartQuery = q;
       state.smartResults = ranked;
       el.resultSummary.textContent = lines.length ? `关于“${q}”共筛出 ${ranked.length} 篇较相关文献。` : `关于“${q}”没有筛到相关文献。`;
       el.resultBar.classList.remove('hidden');
       state.keyword = '';
       state.selectedFilter = '全部';
-      el.searchInput.value = '';
       renderMenu();
       renderPapers();
     }
@@ -793,7 +799,6 @@
       state.smartResults = null;
       state.smartQuery = '';
       el.consoleInput.value = '';
-      el.consoleResult.textContent = '';
       el.resultSummary.textContent = '';
       el.resultBar.classList.add('hidden');
       renderMenu();
@@ -811,14 +816,6 @@
         return `<article class="card"><h2 class="title">${safeText(p.title, safeText(p.filename, '未命名文献'))}</h2><div class="meta"><span>一级类目：${safeText(p.category, '未分类')}</span><span>作者：${authors}</span><span>年份：${safeText(p.year, '未提取')}</span><span>加入时间：${safeText(p.added_at, '未记录')}</span></div><div class="summary">${safeText(p.abstract_summary_zh, '未生成概括性摘要说明')}</div><div class="tags">${collections.map(t => `<span class="tag">${t}</span>`).join('')}${tags.map(t => `<span class="tag">${t}</span>`).join('')}</div><div class="actions">${href ? `<a class="link-btn" href="${encodeURI(href)}" target="_self">打开原文</a>` : ''}<button type="button" class="link-btn" data-edit-id="${p.id}">编辑</button></div><details class="paper-detail"><summary>查看原始摘要</summary><div>${safeText(p.abstract_original, '未提取到摘要')}</div></details><details class="paper-detail"><summary>查看补充信息</summary><div>原始文件名：${safeText(p.filename, '未记录')}</div><div>来源备注：${safeText(p.source_note, '未记录')}</div><div>原文路径：${safeText(p.file_path || p.file_url, '未记录')}</div></details></article>`;
       }).join('');
     }
-    el.searchInput.addEventListener('input', e => {
-      state.smartResults = null;
-      state.smartQuery = '';
-      el.resultBar.classList.add('hidden');
-      el.consoleResult.textContent = '';
-      state.keyword = e.target.value.trim();
-      renderPapers();
-    });
     el.consoleInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         e.preventDefault();

@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: literature
+      POSTGRES_USER: literature
+      POSTGRES_PASSWORD: literature
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U literature -d literature"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn remote_app.main:app --host 0.0.0.0 --port 8080
+    volumes:
+      - ./literature-library/files:/app/literature-library/files
+      - ./remote-data:/app/remote-data
+      - ./remote-ui:/app/remote-ui
+      - ./scripts:/app/scripts
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python -m remote_app.worker
+    volumes:
+      - ./literature-library/files:/app/literature-library/files
+      - ./remote-data:/app/remote-data
+      - ./scripts:/app/scripts
+
+  caddy:
+    image: caddy:2.8-alpine
+    depends_on:
+      - api
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./remote-ui:/srv/web:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

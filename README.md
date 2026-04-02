@@ -74,3 +74,33 @@ python3 ~/Desktop/文献管理html/scripts/update_library.py
 当前逻辑：更新本地文献库后，会尝试自动 rsync 到远程服务器。
 
 若要真正自动发布成功，需要先配置 SSH 免密登录。
+
+---
+
+## 远端交互式 V1（新增）
+
+项目已新增一套远端交互版本，支持：
+
+- 统一后端智能搜索（支持 query rewrite / rerank 的 LLM hook）
+- 远端上传文献并异步解析
+- URL 网页正文解析入库
+- 任务状态追踪
+- 内网管理台编辑文献元数据
+
+主要目录：
+
+- `remote_app/`：FastAPI + Worker
+- `remote-ui/`：前端（公开检索页 + 管理台）
+- `docker-compose.yml`：`caddy + api + worker + postgres + redis`
+- `scripts/migrate_papers_to_db.py`：将 `literature-library/papers.json` 迁移到数据库
+
+详见：
+
+- `docs/REMOTE_V1.md`
+- `docs/GITHUB_AUTODEPLOY_SETUP.md`
+
+远端 V1 当前默认体验：
+
+- 公开首页为“分类目录 + 分页浏览”（搜索为增强入口）
+- 管理台改为公网可访问，但写接口必须携带 `X-Admin-Token`
+- 支持 `GitHub Actions` 自动部署到 VPS（`push main`）

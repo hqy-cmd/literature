@@ -1,0 +1,9 @@
+{$SITE_HOST:localhost} {
+  root * /srv/web
+  encode zstd gzip
+
+  @api path /api/*
+  reverse_proxy @api api:8080
+
+  file_server
+}

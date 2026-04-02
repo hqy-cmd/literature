@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI 文献库管理台</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --line: #d3dbe9;
+      --text: #121a29;
+      --muted: #607087;
+      --brand: #005ed8;
+      --brand-soft: #eaf2ff;
+      --ok: #0e7d4e;
+      --warn: #915000;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1100px 480px at 5% -20%, #ddebff 0%, transparent 65%),
+        radial-gradient(900px 380px at 96% -30%, #ffe6cc 0%, transparent 60%),
+        var(--bg);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
+    }
+    .shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 14px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(20, 29, 46, 0.06);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      letter-spacing: 0.2px;
+    }
+    .hint { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .row { display: grid; gap: 8px; margin-bottom: 10px; }
+    .input, .textarea, .file, .select {
+      width: 100%;
+      border: 1px solid #b8c6dc;
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: #fff;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .textarea { min-height: 90px; resize: vertical; }
+    .btn {
+      border: 1px solid var(--brand);
+      background: var(--brand);
+      color: #fff;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    .btn.ghost {
+      background: #fff;
+      color: var(--brand);
+      border-color: #aac4e8;
+    }
+    .state { font-size: 12px; color: var(--muted); }
+    .state.ok { color: var(--ok); }
+    .state.warn { color: var(--warn); }
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .result-list { display: grid; gap: 10px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+    .title { margin: 0; font-size: 17px; }
+    .meta { margin: 6px 0; color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .reason { border-left: 3px solid var(--brand); padding: 6px 8px; background: var(--brand-soft); border-radius: 0 8px 8px 0; font-size: 12px; }
+    .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .task { font-size: 12px; border-bottom: 1px dashed #d3deef; padding: 7px 0; }
+    .task:last-child { border-bottom: none; }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: -560px;
+      width: min(560px, 100vw);
+      height: 100vh;
+      background: #fff;
+      border-left: 1px solid var(--line);
+      box-shadow: -14px 0 36px rgba(18, 28, 46, 0.12);
+      transition: right 220ms ease;
+      z-index: 999;
+      padding: 14px;
+      overflow: auto;
+    }
+    .drawer.open { right: 0; }
+    .two-col { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <h1>管理台</h1>
+      <div class="hint">该页面用于远端上传、URL 解析、任务跟踪、元数据编辑。建议通过 SSH 隧道访问。</div>
+
+      <div class="row">
+        <label>Admin Token（必填）</label>
+        <input id="adminToken" class="input" placeholder="所有管理接口都需要 X-Admin-Token" />
+      </div>
+      <div class="row">
+        <label>上传文献文件</label>
+        <input id="uploadFile" class="file" type="file" />
+        <button id="uploadBtn" class="btn">提交上传任务</button>
+      </div>
+      <div class="row">
+        <label>网页解析 URL</label>
+        <input id="urlInput" class="input" placeholder="https://..." />
+        <button id="urlBtn" class="btn">提交 URL 解析任务</button>
+      </div>
+      <div class="row">
+        <div class="result-head">
+          <strong>任务状态</strong>
+          <button id="refreshTaskBtn" class="btn ghost">刷新任务</button>
+        </div>
+        <div id="taskList"></div>
+      </div>
+      <div id="leftState" class="state">请先填写 Admin Token。</div>
+    </aside>
+
+    <main class="panel">
+      <div class="result-head">
+        <strong>智能搜索与编辑</strong>
+        <button id="searchBtn" class="btn">搜索</button>
+      </div>
+      <div class="row">
+        <input id="queryInput" class="input" placeholder="输入自然语言问题后回车" />
+      </div>
+      <div id="searchSummary" class="hint">等待检索…</div>
+      <section id="resultList" class="result-list"></section>
+    </main>
+  </div>
+
+  <aside id="drawer" class="drawer">
+    <div class="result-head">
+      <strong>编辑文献</strong>
+      <button id="closeDrawerBtn" class="btn ghost">关闭</button>
+    </div>
+    <div class="row"><label>标题</label><input id="e_title" class="input" /></div>
+    <div class="two-col">
+      <div class="row"><label>年份</label><input id="e_year" class="input" /></div>
+      <div class="row"><label>分类</label><input id="e_category" class="input" /></div>
+    </div>
+    <div class="row"><label>作者（逗号分隔）</label><textarea id="e_authors" class="textarea"></textarea></div>
+    <div class="row"><label>分类集合（逗号分隔）</label><textarea id="e_collections" class="textarea"></textarea></div>
+    <div class="row"><label>标签（逗号分隔）</label><textarea id="e_tags" class="textarea"></textarea></div>
+    <div class="row"><label>摘要</label><textarea id="e_summary" class="textarea"></textarea></div>
+    <div class="row"><label>来源备注</label><textarea id="e_source_note" class="textarea"></textarea></div>
+    <div class="actions">
+      <button id="saveEditBtn" class="btn">保存修改</button>
+      <button id="cancelEditBtn" class="btn ghost">取消</button>
+    </div>
+    <div id="editState" class="state"></div>
+  </aside>
+
+  <script>
+    const state = {
+      currentEditId: null,
+      currentResults: [],
+    };
+    const el = {
+      adminToken: document.getElementById('adminToken'),
+      uploadFile: document.getElementById('uploadFile'),
+      uploadBtn: document.getElementById('uploadBtn'),
+      urlInput: document.getElementById('urlInput'),
+      urlBtn: document.getElementById('urlBtn'),
+      refreshTaskBtn: document.getElementById('refreshTaskBtn'),
+      taskList: document.getElementById('taskList'),
+      leftState: document.getElementById('leftState'),
+      queryInput: document.getElementById('queryInput'),
+      searchBtn: document.getElementById('searchBtn'),
+      searchSummary: document.getElementById('searchSummary'),
+      resultList: document.getElementById('resultList'),
+      drawer: document.getElementById('drawer'),
+      closeDrawerBtn: document.getElementById('closeDrawerBtn'),
+      saveEditBtn: document.getElementById('saveEditBtn'),
+      cancelEditBtn: document.getElementById('cancelEditBtn'),
+      editState: document.getElementById('editState'),
+      e_title: document.getElementById('e_title'),
+      e_year: document.getElementById('e_year'),
+      e_category: document.getElementById('e_category'),
+      e_authors: document.getElementById('e_authors'),
+      e_collections: document.getElementById('e_collections'),
+      e_tags: document.getElementById('e_tags'),
+      e_summary: document.getElementById('e_summary'),
+      e_source_note: document.getElementById('e_source_note'),
+    };
+
+    function safe(v, fallback = '') {
+      return v === null || v === undefined ? fallback : String(v);
+    }
+
+    function headers(isJson = true) {
+      const h = {};
+      const token = (el.adminToken.value || '').trim();
+      if (isJson) h['Content-Type'] = 'application/json';
+      if (token) h['X-Admin-Token'] = token;
+      return h;
+    }
+
+    function ensureToken() {
+      const token = (el.adminToken.value || '').trim();
+      if (!token) {
+        setLeftState('缺少 Admin Token。', 'warn');
+        return '';
+      }
+      return token;
+    }
+
+    function setLeftState(text, cls = '') {
+      el.leftState.className = `state ${cls}`.trim();
+      el.leftState.textContent = text;
+    }
+
+    function csv(v) {
+      return Array.isArray(v) ? v.join(', ') : safe(v, '');
+    }
+
+    function openEditDrawer(item) {
+      state.currentEditId = item.id;
+      el.e_title.value = safe(item.title);
+      el.e_year.value = safe(item.year);
+      el.e_category.value = safe(item.category);
+      el.e_authors.value = csv(item.authors);
+      el.e_collections.value = csv(item.collections);
+      el.e_tags.value = csv(item.tags);
+      el.e_summary.value = safe(item.abstract_summary_zh);
+      el.e_source_note.value = safe(item.source_note);
+      el.editState.textContent = '';
+      el.drawer.classList.add('open');
+    }
+
+    function closeEditDrawer() {
+      state.currentEditId = null;
+      el.drawer.classList.remove('open');
+    }
+
+    function renderResults(items) {
+      if (!items.length) {
+        el.resultList.innerHTML = '<article class="card"><div class="meta">没有检索结果</div></article>';
+        return;
+      }
+      el.resultList.innerHTML = items.map(item => `
+        <article class="card">
+          <h3 class="title">${safe(item.title, safe(item.filename, '未命名'))}</h3>
+          <div class="meta">
+            <span>分类：${safe(item.category, '未分类')}</span>
+            <span>年份：${safe(item.year, '未知')}</span>
+            <span>ID：${safe(item.id)}</span>
+            <span>分数：${safe(item.search_score, '-')}</span>
+          </div>
+          <div class="reason">${(item.hit_reasons || []).join('；') || '命中原因暂无'}</div>
+          <p>${safe(item.abstract_summary_zh, '未生成摘要')}</p>
+          <div class="actions">
+            <button class="btn ghost" data-edit-id="${safe(item.id)}">编辑</button>
+            ${(item.file_url || item.file_path) ? `<a class="btn ghost" href="${encodeURI(item.file_url || item.file_path)}" target="_self">打开原文</a>` : ''}
+          </div>
+        </article>
+      `).join('');
+    }
+
+    async function runSearch() {
+      const q = (el.queryInput.value || '').trim();
+      if (!q) return;
+      el.searchSummary.textContent = '检索中...';
+      try {
+        const resp = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=20`);
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'search_failed');
+        state.currentResults = data.results || [];
+        el.searchSummary.textContent = `${safe(data.summary)} | rewrite: ${(data.rewritten_terms || []).slice(0, 12).join('、')}`;
+        renderResults(state.currentResults);
+      } catch (err) {
+        el.searchSummary.textContent = `检索失败：${err.message}`;
+      }
+    }
+
+    async function uploadFile() {
+      if (!ensureToken()) return;
+      const file = el.uploadFile.files[0];
+      if (!file) {
+        setLeftState('请先选择文件。', 'warn');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', file);
+      setLeftState('上传任务提交中...');
+      try {
+        const token = (el.adminToken.value || '').trim();
+        const opts = { method: 'POST', body: formData, headers: {} };
+        if (token) opts.headers['X-Admin-Token'] = token;
+        const resp = await fetch('/api/ingest/upload', opts);
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'upload_failed');
+        setLeftState(`任务已创建：${data.task_id}`, 'ok');
+        refreshTasks();
+      } catch (err) {
+        setLeftState(`上传失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function parseUrl() {
+      if (!ensureToken()) return;
+      const url = (el.urlInput.value || '').trim();
+      if (!url) {
+        setLeftState('请输入 URL。', 'warn');
+        return;
+      }
+      setLeftState('URL 解析任务提交中...');
+      try {
+        const resp = await fetch('/api/ingest/url', {
+          method: 'POST',
+          headers: headers(true),
+          body: JSON.stringify({ url }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error(data.detail || 'url_parse_failed');
+        setLeftState(`任务已创建：${data.task_id}`, 'ok');
+        refreshTasks();
+      } catch (err) {
+        setLeftState(`提交失败：${err.message}`, 'warn');
+      }
+    }
+
+    async function refreshTasks() {
+      if (!ensureToken()) return;
+      try {
+        const resp = await fetch('/api/tasks?limit=20', { headers: headers(false) });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.detail || 'task_list_failed');
+        el.taskList.innerHTML = (data || []).map(task => `
+          <div class="task">
+            <div><strong>${safe(task.id)}</strong></div>
+            <div>${safe(task.task_type)} | ${safe(task.status)} | ${safe(task.progress)}%</div>
+            <div>${safe(task.message)} ${safe(task.error_message)}</div>
+          </div>
+        `).join('') || '<div class="task">暂无任务</div>';
+      } catch (err) {
+        el.taskList.innerHTML = `<div class="task">任务获取失败：${err.message}</div>`;
+      }
+    }
+
+    async function saveEdit() {
+      if (!ensureToken()) return;
+      if (!state.currentEditId) return;
+      el.editState.textContent = '保存中...';
+      const updates = {
+        title: el.e_title.value,
+        year: el.e_year.value,
+        category: el.e_category.value,
+        authors: el.e_authors.value,
+        collections: el.e_collections.value,
+        tags: el.e_tags.value,
+        abstract_summary_zh: el.e_summary.value,
+        source_note: el.e_source_note.value,
+      };
+      try {
+        const resp = await fetch(`/api/papers/${encodeURIComponent(state.currentEditId)}/update`, {
+          method: 'POST',
+          headers: headers(true),
+          body: JSON.stringify({ updates }),
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.ok) throw new Error((data.detail && JSON.stringify(data.detail)) || 'update_failed');
+        el.editState.className = 'state ok';
+        el.editState.textContent = `保存成功：${(data.updated_fields || []).join(', ')}`;
+        runSearch();
+      } catch (err) {
+        el.editState.className = 'state warn';
+        el.editState.textContent = `保存失败：${err.message}`;
+      }
+    }
+
+    el.searchBtn.addEventListener('click', runSearch);
+    el.queryInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runSearch();
+      }
+    });
+    el.uploadBtn.addEventListener('click', uploadFile);
+    el.urlBtn.addEventListener('click', parseUrl);
+    el.refreshTaskBtn.addEventListener('click', refreshTasks);
+    el.resultList.addEventListener('click', e => {
+      const target = e.target.closest('[data-edit-id]');
+      if (!target) return;
+      const item = state.currentResults.find(x => x.id === target.dataset.editId);
+      if (item) openEditDrawer(item);
+    });
+    el.closeDrawerBtn.addEventListener('click', closeEditDrawer);
+    el.cancelEditBtn.addEventListener('click', closeEditDrawer);
+    el.saveEditBtn.addEventListener('click', saveEdit);
+
+    el.adminToken.addEventListener('change', () => {
+      if ((el.adminToken.value || '').trim()) {
+        refreshTasks();
+      }
+    });
+  </script>
+</body>
+</html>

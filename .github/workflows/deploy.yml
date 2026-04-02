@@ -1,0 +1,59 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      rollback_ref:
+        description: "Optional git ref/tag/commit to deploy (for rollback)"
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.rollback_ref || github.sha }}
+    steps:
+      - name: Checkout target ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.DEPLOY_REF }}
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync project files to VPS
+        run: |
+          rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "remote-data/" \
+            --exclude "__pycache__/" \
+            -e "ssh -p ${{ secrets.VPS_PORT }}" \
+            ./ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_PATH }}/"
+
+      - name: Write production env and deploy
+        run: |
+          ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" <<'EOF'
+          set -euo pipefail
+          mkdir -p "${{ secrets.VPS_PATH }}"
+          cat > "${{ secrets.VPS_PATH }}/.env" <<'ENVEOF'
+          ${{ secrets.PROD_ENV_FILE }}
+          ENVEOF
+          cd "${{ secrets.VPS_PATH }}"
+          docker compose up -d --build
+          docker compose ps
+          curl -fsS "http://127.0.0.1:8080/api/health" >/dev/null
+          EOF
+
+      - name: Post-deploy summary
+        run: |
+          echo "Deployed ref: $DEPLOY_REF"
+          echo "Target host: ${{ secrets.VPS_HOST }}"
