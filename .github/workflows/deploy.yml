@@ -74,7 +74,12 @@ jobs:
           ssh -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" <<'EOF'
           set -euo pipefail
           cd "${{ secrets.VPS_PATH }}"
-          docker compose up -d --build
+          # Clean stale/orphan containers first to avoid "No such container" recreate race.
+          docker compose down --remove-orphans || true
+          if ! docker compose up -d --build --remove-orphans; then
+            docker rm -f html_project-api-1 html_project-worker-1 html_project-caddy-1 2>/dev/null || true
+            docker compose up -d --build --remove-orphans --force-recreate
+          fi
           docker compose exec -T api python scripts/migrate_papers_to_db.py
           docker compose ps
           curl -fsS "http://127.0.0.1:8080/api/health" >/dev/null
