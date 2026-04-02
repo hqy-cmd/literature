@@ -15,14 +15,30 @@ from remote_app.database import Base, SessionLocal, engine  # noqa: E402
 from remote_app.models import Paper  # noqa: E402
 from remote_app.services import upsert_paper  # noqa: E402
 from remote_app.utils import build_list_summary, normalize_top_category  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
 
 PAPERS_JSON = BASE_DIR / "literature-library" / "papers.json"
 
 
+def ensure_online_columns() -> None:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS list_summary_zh TEXT DEFAULT ''"))
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS publish_status VARCHAR(32) DEFAULT 'published'"))
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_confidence DOUBLE PRECISION DEFAULT 1.0"))
+        conn.execute(
+            text(
+                "ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_confidence_breakdown JSON DEFAULT '{}'::json"
+            )
+        )
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS analysis_warnings JSON DEFAULT '[]'::json"))
+        conn.execute(text("ALTER TABLE papers ADD COLUMN IF NOT EXISTS classification_evidence JSON DEFAULT '[]'::json"))
+
+
 def main() -> None:
     settings.ensure_dirs()
     Base.metadata.create_all(bind=engine)
+    ensure_online_columns()
     if not PAPERS_JSON.exists():
         print(json.dumps({"ok": False, "error": "papers_json_not_found", "path": str(PAPERS_JSON)}, ensure_ascii=False))
         return
