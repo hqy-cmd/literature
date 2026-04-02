@@ -19,6 +19,7 @@ jobs:
       cancel-in-progress: true
     env:
       DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.rollback_ref || github.sha }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Validate required secrets
         env:
@@ -37,7 +38,7 @@ jobs:
           [ -n "$PROD_ENV_FILE" ] || (echo "Missing required secret: PROD_ENV_FILE" && exit 1)
 
       - name: Checkout target ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ env.DEPLOY_REF }}
 
