@@ -45,7 +45,8 @@ UPLOAD_TMP_DIR=/app/remote-data/uploads
 2. rsync 同步代码到 `VPS_PATH`
 3. 写入 `.env`
 4. 执行 `docker compose up -d --build`
-5. 健康检查 `http://127.0.0.1:8080/api/health`
+5. 自动执行 `python scripts/migrate_papers_to_db.py`（把 `papers.json` 同步进数据库）
+6. 健康检查 `http://127.0.0.1:8080/api/health` 与 `/api/papers`
 
 ## 5. 日常维护流程
 
