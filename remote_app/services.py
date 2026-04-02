@@ -397,7 +397,13 @@ def list_category_groups(db: Session, status: str = "published") -> list[dict]:
 
     groups: list[dict] = []
     for top, count in top_counter.items():
-        children = [{"name": k, "count": v} for k, v in sub_counter.get(top, {}).items()]
+        children = []
+        if top != "其他":
+            children = [
+                {"name": k, "count": v}
+                for k, v in sub_counter.get(top, {}).items()
+                if k and k not in {"其他", "未细分", top}
+            ]
         children.sort(key=lambda x: (-x["count"], x["name"]))
         groups.append({"name": top, "count": count, "children": children})
     groups.sort(key=lambda x: (-x["count"], x["name"]))

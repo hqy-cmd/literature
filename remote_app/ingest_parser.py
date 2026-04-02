@@ -19,6 +19,7 @@ from .utils import (
     build_list_summary,
     compact_to_two_sentences,
     ensure_list,
+    normalize_top_category,
     now_text,
 )
 
@@ -98,6 +99,8 @@ AUTHOR_NOISE_PATTERNS = [
     r"关键词",
     r"引言",
 ]
+
+GENERIC_SUBCATEGORY_NAMES = {"其他", "未细分", "未分类"}
 
 
 class SimpleHTMLStripper(HTMLParser):
@@ -404,6 +407,48 @@ def merge_subcategories(base: list[str], llm_subs: list[str]) -> list[str]:
     return merged[:12]
 
 
+def pick_promoted_top_from_subcategories(subs: list[str]) -> str:
+    for raw in subs or []:
+        name = str(raw or "").strip()
+        if not name or name in GENERIC_SUBCATEGORY_NAMES:
+            continue
+        mapped = normalize_top_category("", [name])
+        if mapped != "其他":
+            return mapped
+    for raw in subs or []:
+        name = str(raw or "").strip()
+        if not name or name in GENERIC_SUBCATEGORY_NAMES:
+            continue
+        if _valid_custom_category(name):
+            return f"自定义:{name}"
+    return ""
+
+
+def sanitize_subcategories_for_top(top_category: str, subs: list[str]) -> list[str]:
+    display_top = str(top_category or "").strip()
+    if display_top.startswith("自定义:"):
+        display_top = display_top.split(":", 1)[1].strip() or "其他"
+    if display_top == "其他":
+        return ["其他"]
+    out: list[str] = []
+    seen = set()
+    for raw in subs or []:
+        name = str(raw or "").strip()
+        if not name:
+            continue
+        if name in GENERIC_SUBCATEGORY_NAMES:
+            continue
+        if name == display_top:
+            continue
+        if name in seen:
+            continue
+        seen.add(name)
+        out.append(name)
+    if not out:
+        return [display_top]
+    return out[:12]
+
+
 def detect_tags(title: str, full_text: str, collections: list[str], llm_tags: list[str] | None = None) -> list[str]:
     text = clean_text(f"{title}\n{full_text}").lower()
     tags = list(collections)
@@ -577,8 +622,9 @@ def build_paper_payload(filename: str, text: str) -> dict:
     if raw_category and raw_category not in TOP_LEVEL_CATEGORIES and _valid_custom_category(raw_category):
         custom_top = f"自定义:{raw_category}"
 
+    llm_subs = ensure_list(llm_data.get("sub_categories"))
     collections = detect_collections(title, abstract_original, category)
-    collections = merge_subcategories(collections, ensure_list(llm_data.get("sub_categories")))
+    collections = merge_subcategories(collections, llm_subs)
     llm_evidence = ensure_list(llm_data.get("evidence"))
     evidence = llm_evidence or local_evidence
     evidence = [x for x in evidence if x][:8]
@@ -591,13 +637,31 @@ def build_paper_payload(filename: str, text: str) -> dict:
         if second_cat in TOP_LEVEL_CATEGORIES and second_cat != "其他":
             category = second_cat
             collections = detect_collections(title, abstract_original, category)
-            collections = merge_subcategories(collections, ensure_list(llm_data.get("sub_categories")))
+            collections = merge_subcategories(collections, llm_subs)
             if second_evidence:
                 evidence = second_evidence[:8]
 
+    # Try to reduce "其他" by lifting from subcategories:
+    # 1) map known subtopic -> fixed top category
+    # 2) if still unclear, promote a valid subtopic into a custom top category.
+    if category == "其他" and not custom_top:
+        promoted = pick_promoted_top_from_subcategories(collections or llm_subs)
+        if promoted:
+            if promoted.startswith("自定义:"):
+                custom_top = promoted
+            else:
+                category = promoted
+            evidence = (evidence + [f"子类提升: {promoted.replace('自定义:', '')}"])[:8]
+
     final_category = custom_top or category
     if custom_top:
-        evidence = (evidence + [f"LLM自定义大类: {raw_category}"])[:8]
+        custom_label = custom_top.split(":", 1)[1].strip() if custom_top.startswith("自定义:") else custom_top
+        if raw_category:
+            evidence = (evidence + [f"LLM自定义大类: {raw_category}"])[:8]
+        else:
+            evidence = (evidence + [f"规则提升大类: {custom_label}"])[:8]
+
+    collections = sanitize_subcategories_for_top(final_category, collections)
 
     summary = str(llm_data.get("abstract_summary_zh") or local_summary).strip()
     if not summary:
